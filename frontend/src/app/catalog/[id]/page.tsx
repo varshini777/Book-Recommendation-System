@@ -73,7 +73,7 @@ export default function BookDetail({ params }: { params: Promise<{ id: string }>
       </div>
 
       {/* Book details card */}
-      <div className="card" style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }} className="detail-grid">
+      <div className="card detail-grid" style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>
         
         {/* Cover column */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>

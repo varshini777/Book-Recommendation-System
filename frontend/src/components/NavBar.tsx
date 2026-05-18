@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useApp } from '@/lib/store';
+import { useApp } from '../lib/store';
 import { useState } from 'react';
 
 export default function NavBar() {

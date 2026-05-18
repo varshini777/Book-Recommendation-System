@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Book } from '@/lib/data';
+import { Book } from '../lib/data';
 
 interface BookCardProps {
   book: Book;

@@ -1,8 +1,8 @@
 'use client';
-import { useApp } from '@/lib/store';
-import { BOOKS } from '@/lib/data';
-import { getSimilarBooks } from '@/lib/recommendations';
-import BookCard from '@/components/BookCard';
+import { useApp } from '../../../lib/store';
+import { BOOKS } from '../../../lib/data';
+import { getSimilarBooks } from '../../../lib/recommendations';
+import BookCard from '../../../components/BookCard';
 import Link from 'next/link';
 import { useState, use } from 'react';
 

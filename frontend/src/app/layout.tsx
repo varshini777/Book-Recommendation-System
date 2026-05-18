@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AppProvider } from "@/lib/store";
-import NavBar from "@/components/NavBar";
+import { AppProvider } from "../lib/store";
+import NavBar from "../components/NavBar";
 
 export const metadata: Metadata = {
   title: "LitRealm — Personalized Book Recommendation System",

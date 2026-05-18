@@ -1,5 +1,5 @@
 'use client';
-import { useApp } from '@/lib/store';
+import { useApp } from '../../lib/store';
 import Link from 'next/link';
 import { useState } from 'react';
 

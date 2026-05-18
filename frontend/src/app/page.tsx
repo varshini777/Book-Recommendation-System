@@ -1,9 +1,9 @@
 'use client';
-import { useApp } from '@/lib/store';
-import { getRecommendations, getTrending } from '@/lib/recommendations';
-import BookCard from '@/components/BookCard';
+import { useApp } from '../lib/store';
+import { getRecommendations, getTrending } from '../lib/recommendations';
+import BookCard from '../components/BookCard';
 import Link from 'next/link';
-import { GENRES, LANGUAGES } from '@/lib/data';
+import { GENRES, LANGUAGES } from '../lib/data';
 import { useState } from 'react';
 
 export default function Home() {

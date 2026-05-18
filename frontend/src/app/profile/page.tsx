@@ -1,6 +1,6 @@
 'use client';
-import { useApp } from '@/lib/store';
-import { GENRES, LANGUAGES } from '@/lib/data';
+import { useApp } from '../../lib/store';
+import { GENRES, LANGUAGES } from '../../lib/data';
 import { useState, useEffect } from 'react';
 
 export default function Profile() {

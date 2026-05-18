@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
-import { GENRES, LANGUAGES, BOOKS } from '@/lib/data';
-import { searchBooks } from '@/lib/recommendations';
-import BookCard from '@/components/BookCard';
+import { GENRES, LANGUAGES, BOOKS } from '../../lib/data';
+import { searchBooks } from '../../lib/recommendations';
+import BookCard from '../../components/BookCard';
 
 export default function Catalog() {
   const [query, setQuery] = useState('');

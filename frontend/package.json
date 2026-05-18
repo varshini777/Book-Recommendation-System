@@ -31,6 +31,6 @@
     "typescript": "^5"
   },
   "overrides": {
-    "node-domexception": "1.0.0"
+    "node-domexception": "file:./src/lib/node-domexception-mock"
   }
 }

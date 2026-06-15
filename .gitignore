@@ -24,13 +24,18 @@ pip-delete-this-directory.txt
 .venv
 bin/
 include/
-lib/
+env/lib/
+venv/lib/
+.venv/lib/
 share/
 pyvenv.cfg
 .pytest_cache/
 .coverage
 htmlcov/
 .ipynb_checkpoints/
+backend/*.db
+backend/*.log
+frontend/*.log
 
 # IDEs and editors
 .vscode/
@@ -44,3 +49,9 @@ htmlcov/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Project specific
+*.db
+dataset/
+models/
+*.log

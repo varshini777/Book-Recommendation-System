@@ -1,43 +1,79 @@
 'use client';
-import { useApp } from '../../lib/store';
-import { GENRES, LANGUAGES } from '../../lib/data';
+import { useAppStore } from '../../lib/zustandStore';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { User, Mail, Sparkles, Award, ShieldAlert, Globe, Layers, BookOpen, Settings, LogOut } from 'lucide-react';
+import Link from 'next/link';
+
+const GENRES = ['Fiction', 'Non-Fiction', 'Mystery', 'Romance', 'Science Fiction', 'Fantasy', 'Thriller', 'Historical', 'Biography', 'Self-Help', 'Business', 'Philosophy', 'Poetry', 'Drama', 'Adventure'];
+const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Korean', 'Russian'];
 
 export default function Profile() {
-  const { user, setUser, prefs, setPrefs, setOnboarded, library, addToast } = useApp();
+  const { user, token, library, logout } = useAppStore();
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
       setName(user.name);
       setEmail(user.email);
     }
-    setSelectedGenres(prefs.genres);
-    setSelectedLangs(prefs.languages);
-  }, [user, prefs]);
+  }, [user]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUser({
-      name,
-      email,
-      avatar: '👤'
-    });
-    setPrefs({
-      genres: selectedGenres,
-      languages: selectedLangs,
-      authors: []
-    });
-    addToast("Profile and preferences updated successfully! ✨", "success");
+    setLoading(true);
+    
+    try {
+      // Update user profile
+      const response = await fetch('http://localhost:8000/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, avatar: '👤' }),
+      });
+      
+      if (response.ok) {
+        // Update preferences
+        const prefsResponse = await fetch('http://localhost:8000/users/me/preferences', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            preferred_genres: selectedGenres,
+            preferred_languages: selectedLangs,
+            preferred_authors: [],
+            onboarding_completed: true
+          }),
+        });
+        
+        if (prefsResponse.ok) {
+          alert('Profile and preferences updated successfully!');
+        } else {
+          alert('Profile updated but preferences failed');
+        }
+      } else {
+        alert('Error updating profile');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error updating profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReset = () => {
-    localStorage.clear();
-    window.location.reload();
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
   };
 
   const toggleGenre = (genre: string) => {
@@ -61,127 +97,121 @@ export default function Profile() {
     ? (ratedBooks.reduce((acc, curr) => acc + curr.rating, 0) / ratedBooks.length).toFixed(1)
     : '0.0';
 
+  if (!user) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+        <h2 style={{ fontSize: '1.5rem', color: '#6A1B29', marginBottom: '20px' }}>
+          Please sign in to view your profile
+        </h2>
+        <Link href="/login" className="btn-primary">Sign In</Link>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px 24px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }} className="fade-in profile-grid">
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '48px 24px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }} className="fade-in profile-grid">
       
-      {/* Column 1: Stats & Reset */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Column 1: Stats & Actions */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
         {/* User Card */}
-        <div className="card" style={{ padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
-          <div style={{ fontSize: '4rem', width: '100px', height: '100px', borderRadius: '50%', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center', border: '2px solid var(--border)' }}>
-            👤
+        <div className="card" style={{ padding: '36px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
+          <div style={{ 
+            width: '100px', 
+            height: '100px', 
+            borderRadius: '50%', 
+            background: 'linear-gradient(135deg, #6A1B29, #D4AF37)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            boxShadow: '0 10px 25px rgba(106, 27, 41, 0.15)',
+            border: '4px solid #FCFAF6'
+          }}>
+            <User size={40} color="white" />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0 }}>
+            <h2 style={{ fontSize: '1.6rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0, color: '#1E1B18' }}>
               {name || 'Reader'}
             </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>
+            <p style={{ color: '#8A827A', fontSize: '0.9rem', margin: '6px 0 0 0', fontWeight: 500 }}>
               {email || 'reader@example.com'}
             </p>
+            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <Link href="/edit-profile" className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem', justifyContent: 'center' }}>
+                Edit Profile
+              </Link>
+              <Link href="/settings" className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem', justifyContent: 'center' }}>
+                <Settings size={14} />
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Reading Stats */}
-        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h3 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', color: 'var(--navy)', borderBottom: '1px solid var(--border)', paddingBottom: '8px', margin: 0 }}>
+        <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <h3 style={{ fontSize: '1.25rem', fontFamily: 'Playfair Display, serif', color: '#6A1B29', borderBottom: '1px solid #E8E2D9', paddingBottom: '10px', margin: 0, fontWeight: 800 }}>
             Reading Analytics
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-              <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--burgundy)' }}>{totalBooks}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Library Books</span>
+            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
+              <Layers size={18} style={{ color: '#6A1B29', marginBottom: '6px' }} />
+              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>{totalBooks}</span>
+              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Library Books</span>
             </div>
-            <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-              <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--navy)' }}>{currentlyReading}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Reading Now</span>
+            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
+              <BookOpen size={18} style={{ color: '#6A1B29', marginBottom: '6px' }} />
+              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>{currentlyReading}</span>
+              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Reading Now</span>
             </div>
-            <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-              <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--gold)' }}>{completed}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Completed</span>
+            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
+              <Sparkles size={18} style={{ color: '#D4AF37', marginBottom: '6px' }} />
+              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>{completed}</span>
+              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Completed</span>
             </div>
-            <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-              <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--burgundy)' }}>★ {avgRating}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Avg Rating</span>
+            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
+              <Award size={18} style={{ color: '#6A1B29', marginBottom: '6px' }} />
+              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>★ {avgRating}</span>
+              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Avg Rating</span>
             </div>
           </div>
         </div>
 
-        {/* Danger zone / Reset */}
-        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px', borderColor: '#fca5a5' }}>
-          <h3 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', color: '#dc2626', margin: 0 }}>
-            Danger Zone
-          </h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Clearing system data deletes all preferences and library books permanently.
-          </p>
-          {!confirmReset ? (
-            <button 
-              type="button"
-              onClick={() => setConfirmReset(true)}
-              className="btn-secondary"
-              style={{ borderColor: '#dc2626', color: '#dc2626', justifyContent: 'center' }}
-            >
-              Reset System Data ⚠️
-            </button>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }} className="fade-in">
-              <p style={{ margin: 0, fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>
-                Are you absolutely sure? This cannot be undone!
-              </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  type="button"
-                  onClick={handleReset}
-                  className="btn-primary"
-                  style={{ background: '#dc2626', color: 'white', fontSize: '0.8rem', padding: '6px 12px', flex: 1, justifyContent: 'center' }}
-                >
-                  Yes, Reset
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setConfirmReset(false)}
-                  className="btn-secondary"
-                  style={{ fontSize: '0.8rem', padding: '6px 12px', flex: 1, justifyContent: 'center' }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '16px 24px',
+            background: '#DC2626',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            justifyContent: 'center'
+          }}
+        >
+          <LogOut size={16} />
+          Sign Out
+        </button>
       </div>
 
       {/* Column 2: Edit Preferences Form */}
-      <div className="card" style={{ padding: '40px' }}>
-        <h1 style={{ fontSize: '2.0rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: 'var(--burgundy)', margin: '0 0 24px 0' }}>
-          Profile & Preferences
+      <div className="card" style={{ padding: '48px' }}>
+        <h1 style={{ fontSize: '2.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: '#6A1B29', margin: '0 0 28px 0' }}>
+          Reading Preferences
         </h1>
 
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
           
-          {/* Section 1: Account Settings */}
+          {/* Section 1: Genres */}
           <div>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--navy)', borderBottom: '1px solid var(--border)', paddingBottom: '6px', marginBottom: '16px', fontFamily: 'Playfair Display, serif' }}>
-              Account Settings
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }} className="form-row">
-              <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>Full Name</label>
-                <input required type="text" value={name} onChange={e => setName(e.target.value)} className="input-field" />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>Email Address</label>
-                <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" />
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Genres */}
-          <div>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--navy)', borderBottom: '1px solid var(--border)', paddingBottom: '6px', marginBottom: '16px', fontFamily: 'Playfair Display, serif' }}>
+            <h3 style={{ fontSize: '1.2rem', color: '#0E172A', borderBottom: '1px solid #E8E2D9', paddingBottom: '8px', marginBottom: '18px', fontFamily: 'Playfair Display, serif', fontWeight: 800 }}>
               My Genres (Recommendations Source)
             </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {GENRES.map(g => {
                 const isSelected = selectedGenres.includes(g);
                 return (
@@ -190,16 +220,17 @@ export default function Profile() {
                     key={g}
                     onClick={() => toggleGenre(g)}
                     style={{
-                      padding: '6px 14px',
-                      borderRadius: '16px',
-                      border: '1.5px solid',
-                      borderColor: isSelected ? 'var(--burgundy)' : 'var(--border)',
-                      background: isSelected ? 'var(--burgundy)' : 'transparent',
-                      color: isSelected ? 'white' : 'var(--text-secondary)',
-                      fontWeight: 600,
+                      padding: '8px 18px',
+                      borderRadius: '24px',
+                      border: '2px solid',
+                      borderColor: isSelected ? '#6A1B29' : '#E8E2D9',
+                      background: isSelected ? '#6A1B29' : 'transparent',
+                      color: isSelected ? 'white' : '#4A4540',
+                      fontWeight: 700,
                       fontSize: '0.8rem',
                       cursor: 'pointer',
-                      transition: 'all 0.15s'
+                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                      boxShadow: isSelected ? '0 4px 10px rgba(106,27,41,0.12)' : 'none'
                     }}
                   >
                     {g}
@@ -209,12 +240,12 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Section 3: Languages */}
+          {/* Section 2: Languages */}
           <div>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--navy)', borderBottom: '1px solid var(--border)', paddingBottom: '6px', marginBottom: '16px', fontFamily: 'Playfair Display, serif' }}>
+            <h3 style={{ fontSize: '1.2rem', color: '#0E172A', borderBottom: '1px solid #E8E2D9', paddingBottom: '8px', marginBottom: '18px', fontFamily: 'Playfair Display, serif', fontWeight: 800 }}>
               Preferred Languages
             </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {LANGUAGES.map(l => {
                 const isSelected = selectedLangs.includes(l);
                 return (
@@ -223,16 +254,17 @@ export default function Profile() {
                     key={l}
                     onClick={() => toggleLang(l)}
                     style={{
-                      padding: '6px 14px',
-                      borderRadius: '16px',
-                      border: '1.5px solid',
-                      borderColor: isSelected ? 'var(--gold)' : 'var(--border)',
-                      background: isSelected ? 'var(--gold)' : 'transparent',
-                      color: isSelected ? 'white' : 'var(--text-secondary)',
-                      fontWeight: 600,
+                      padding: '8px 18px',
+                      borderRadius: '24px',
+                      border: '2px solid',
+                      borderColor: isSelected ? '#D4AF37' : '#E8E2D9',
+                      background: isSelected ? '#D4AF37' : 'transparent',
+                      color: isSelected ? 'white' : '#4A4540',
+                      fontWeight: 700,
                       fontSize: '0.8rem',
                       cursor: 'pointer',
-                      transition: 'all 0.15s'
+                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                      boxShadow: isSelected ? '0 4px 10px rgba(212,175,55,0.12)' : 'none'
                     }}
                   >
                     {l}
@@ -243,18 +275,15 @@ export default function Profile() {
           </div>
 
           {/* Save Button */}
-          <button type="submit" className="btn-primary" style={{ marginTop: '12px', justifyContent: 'center' }}>
-            Save Changes ✨
+          <button type="submit" className="btn-primary" style={{ marginTop: '16px', justifyContent: 'center', padding: '16px', borderRadius: '14px' }} disabled={loading}>
+            {loading ? 'Saving...' : <><span>Save Preferences</span><Globe size={18} /></>}
           </button>
         </form>
       </div>
 
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
           .profile-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .form-row {
             grid-template-columns: 1fr !important;
           }
         }

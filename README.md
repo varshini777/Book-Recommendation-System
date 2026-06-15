@@ -1,70 +1,89 @@
-# LitRealm: Personalized Book Recommendation System
-### MCA Final Year Project — 2025–2026
+# Intelligent Book Recommendation System 📚
 
-LitRealm is a premium, personalized book discovery and library management system. Built using a modern full-stack web architecture, it utilizes hybrid collaborative and content-based recommendation techniques to provide readers with highly relevant, 100% appropriate, and high-quality book suggestions.
-
----
-
-## 🎨 Design System & Aesthetics
-LitRealm features a bespoke "literary-lover" warm aesthetic to impress project evaluators:
-*   **Color Palette:** Soft Cream (`#FBF8F1`), Warm Sand (`#FFF9F2`), Crimson Burgundy (`#7B2D42`), Navy Blue (`#1E2B4A`), and Soft Gold (`#C9963A`).
-*   **Typography:** Google Fonts *Playfair Display* (for headings and titles) and *Inter* (for clean user interface layout).
-*   **Animations:** Smooth custom CSS transitions and micro-interactions (e.g., hover lifting, modal slide-ins, status transitions).
+An advanced, full-stack Book Recommendation System that offers high-quality, personalized book suggestions using Machine Learning (TF-IDF & Cosine Similarity). Built with a robust Python/FastAPI backend and a modern React/Next.js frontend.
 
 ---
 
-## 📚 Seed Database Features
-*   **High-Quality Dataset:** Pre-populated with **255 famous, popular, and clean English books** across diverse genres.
-*   **100% Family-Friendly:** Zero explicit, adult, violent, or dark content. **The Horror genre has been permanently removed** to ensure compliance with strict academic guidelines.
-*   **Rich Metadata:** Comprehensive book entries including Title, Author, Year, Pages, clean Synopsis, stable Cover URLs from OpenLibrary, ISBN, and Search Tags.
+## ✨ Key Features
 
----
+### 1. 🧠 Machine Learning Engine
+*   **TF-IDF Vectorization & Cosine Similarity:** Analyzes book metadata (titles, descriptions, genres, authors) to find deep contextual relationships between books.
+*   **Hybrid Recommendation:** Combines content-based filtering (ML) with collaborative metrics (ratings) to provide highly relevant book suggestions.
+*   **Smart Cold-Start:** Uses user onboarding preferences (genres) to suggest trending or genre-specific books until the user begins interacting with the library.
+*   **"Similar Books" Matcher:** Instantly discover books contextually similar to the one you are currently viewing.
 
-## ⚙️ Core Recommendation Engine
-The engine utilizes a similarity vector matching model to score and recommend books:
-1.  **Cold-Start Matching:** Scores book matches based on user's selected genres and languages during onboarding.
-2.  **Author Preference Boost:** Multiplies scoring weight if the book author matches the user's preferred writers.
-3.  **Dynamic Shelf Tracking:** Real-time updates to recommendation feeds as you add items to your library or modify reading progress.
+### 2. 🛡️ Authentication & Role-Based Access (RBAC)
+*   **Secure JWT Authentication:** Full login, registration, and session management.
+*   **Role-Based Access Control:** Differentiates between standard `user` and `admin` roles.
+*   **Protected Admin Dashboard:** Dedicated admin interfaces protected by frontend middleware route-guards and backend endpoint dependencies.
+
+### 3. 📖 Library & Cart Management
+*   **Dynamic Bookshelves:** Track books across multiple statuses: *Want to Read*, *Currently Reading*, and *Completed*.
+*   **Favorites & Bookmarks:** Toggle favorite books or bookmark them for quick access.
+*   **Shopping Cart Simulation:** Add/remove items from a cart with real-time state management.
+
+### 4. 🎨 Premium UI/UX & Aesthetics
+*   **Bespoke Design System:** Warm, literary-inspired aesthetic featuring *Playfair Display* typography and soft, sophisticated color palettes.
+*   **Micro-animations:** Smooth CSS transitions for hover states, card lifting, and modal dialogs.
+*   **Resilient Image Loading:** Automatic fallback to aesthetic placeholder covers if remote image URLs fail to load.
+
+### 5. 📊 Curated & Safe Dataset
+*   **Automated Dataset Generation:** Includes custom scripts (`generate_dataset.py`, `import_dataset.py`) to pull 1000+ real, globally recognized English books from public APIs.
+*   **Strict Content Filtering:** The ingestion script actively excludes explicit, adult, romance, and NSFW genres, strictly allowing educational, business, technology, history, thriller, and science categories.
 
 ---
 
 ## 🛠️ Technology Stack
 
-### Frontend Architecture
-*   **Framework:** Next.js 14+ (App Router)
-*   **Language:** TypeScript (Type-safe schemas)
-*   **Styling:** Vanilla CSS Custom Variables (Maximum flexibility and control)
-*   **State Management:** React Context + HTML5 LocalStorage persistence
+### Backend
+*   **Framework:** FastAPI (Python)
+*   **Database:** SQLite (Default, production-ready via SQLAlchemy ORM)
+*   **Machine Learning:** `scikit-learn` (TF-IDF), `pandas`, `numpy`
+*   **Security:** `passlib` (Bcrypt), `python-jose` (JWT)
 
-### Backend & Machine Learning (Ready-to-Scale)
-*   **Framework:** Python FastAPI
-*   **Machine Learning:** `sentence-transformers` (Sentence-BERT), `faiss-cpu` (Fast Vector Search), `scikit-learn`
-*   **Database:** PostgreSQL (with `pgvector` extension)
+### Frontend
+*   **Framework:** Next.js 14+ (React App Router)
+*   **Language:** TypeScript
+*   **State Management:** Zustand (with LocalStorage persist middleware)
+*   **Styling:** Custom CSS / Tailwind CSS
 
 ---
 
-## 🚀 Step-by-Step Local Setup
+## 🚀 Getting Started Locally
 
-### Prerequisites
-*   Node.js (v18 or higher)
-*   npm (v9 or higher)
+### 1. Backend Setup
+1. Open a terminal and navigate to the `backend` folder:
+   ```bash
+   cd backend
+   ```
+2. Install the required Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Generate and Import the Dataset (Builds the SQLite DB and ML Models):
+   ```bash
+   python import_dataset.py
+   ```
+4. Start the FastAPI server:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+   *The API will be available at http://localhost:8000*
 
-### Installation & Launch
-1.  **Extract the project archive** and open the folder in your terminal.
-2.  Navigate to the frontend folder:
-    ```bash
-    cd frontend
-    ```
-3.  Install the required dependencies:
-    ```bash
-    npm install
-    ```
-4.  Run the development server:
-    ```bash
-    npm run dev
-    ```
-5.  Open your browser and navigate to:
-    👉 **http://localhost:3000**
+### 2. Frontend Setup
+1. Open a new terminal and navigate to the `frontend` folder:
+   ```bash
+   cd frontend
+   ```
+2. Install Node dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Next.js development server:
+   ```bash
+   npm run dev
+   ```
+4. Open your browser to **http://localhost:3000** and explore!
 
 ---
 
@@ -72,34 +91,25 @@ The engine utilizes a similarity vector matching model to score and recommend bo
 
 ```
 Book_Recomendation_System/
+├── backend/
+│   ├── app/
+│   │   ├── api/             # FastAPI Route Controllers
+│   │   ├── core/            # Security and JWT config
+│   │   ├── db/              # SQLAlchemy Models & SQLite setup
+│   │   ├── schemas/         # Pydantic validation schemas
+│   │   └── services/        # Business logic & ML Recommender calls
+│   ├── models/              # Pickled ML artifacts (tfidf.pkl, recommender.pkl)
+│   ├── generate_dataset.py  # Script to fetch real books via OpenLibrary API
+│   └── import_dataset.py    # Script to populate SQLite and train ML models
 ├── frontend/
 │   ├── src/
-│   │   ├── app/
-│   │   │   ├── catalog/
-│   │   │   │   ├── [id]/page.tsx      # Detail & Review interface
-│   │   │   │   └── page.tsx           # Rich search & multi-filter page
-│   │   │   ├── library/
-│   │   │   │   └── page.tsx           # Interactive bookshelves
-│   │   │   ├── profile/
-│   │   │   │   └── page.tsx           # Preferences and stats page
-│   │   │   ├── layout.tsx             # Sticky navbar and layout
-│   │   │   └── page.tsx               # Onboarding and main dashboard
-│   │   ├── components/
-│   │   │   ├── BookCard.tsx           # Reuseable aesthetic book card
-│   │   │   └── NavBar.tsx             # Interactive header navigation
-│   │   └── lib/
-│   │       ├── data.ts                # 255 Clean English Book Dataset
-│   │       ├── recommendations.ts     # Content similarity algorithms
-│   │       └── store.tsx              # Global state & LocalStorage engine
-│   ├── package.json
-│   └── next.config.js
-└── README.md                          # Project Documentation
+│   │   ├── app/             # Next.js Pages (Admin, Auth, Catalog, Library)
+│   │   ├── components/      # Reusable React components (BookCard, NavBar)
+│   │   └── lib/             # API client services & Zustand global store
+│   └── package.json
+└── README.md                # Project Documentation
 ```
 
 ---
 
-## 🎓 Academic Viva Highlights
-When demonstrating the project to external examiners, highlight the following:
-1.  **Onboarding State Machine:** Shows how preferences are persisted instantly in local storage without page reloads.
-2.  **Instant Filter Response:** Turbine-fast searching across 255 titles via localized multi-index matching.
-3.  **Bespoke Bookshelves:** Demonstrate adding *Atomic Habits* to "Currently Reading", moving it to "Completed", sliding the progress bar, and giving it 5 stars with a personal note. Show how these interactions dynamically affect recommendation priority scoring.
+*Built for robust performance, clean data presentation, and accurate machine-learning driven recommendations.*

@@ -75,6 +75,12 @@ def get_current_user(user_id: int = Depends(get_current_user_id), db: Session = 
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    
+    # Auto-onboard existing users if applicable
+    from app.services.user_service import UserService
+    user_service = UserService(db)
+    user_service.check_and_update_onboarding(user_id)
+    
     return user
 
 @router.post("/forgot-password")

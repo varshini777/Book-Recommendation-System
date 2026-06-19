@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Register() {
-  const { user, register } = useAppStore();
+  const { user, register, login } = useAppStore();
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -35,7 +35,12 @@ export default function Register() {
     setLoading(true);
     const success = await register(name, email, password);
     if (success) {
-      router.replace('/login');
+      const loginSuccess = await login(email, password);
+      if (loginSuccess) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/login');
+      }
     } else {
       setError('Registration failed. Email may already be in use.');
     }

@@ -18,18 +18,43 @@ class RecommendationService:
     def _weighted_score(
         self,
         similarity_score: float = 0.0,
-        user_preference_score: float = 0.0,
+        genre_score: float = 0.0,
+        author_score: float = 0.0,
+        onboarding_liked_score: float = 0.0,
         popularity_score: float = 0.0,
-        rating_score: float = 0.0,
         freshness_score: float = 0.0,
+        diversity_score: float = 0.0,
     ) -> float:
         return (
-            0.4 * similarity_score +
-            0.2 * user_preference_score +
-            0.15 * popularity_score +
-            0.15 * rating_score +
-            0.1 * freshness_score
+            0.35 * similarity_score +
+            0.20 * genre_score +
+            0.15 * author_score +
+            0.10 * onboarding_liked_score +
+            0.10 * popularity_score +
+            0.05 * freshness_score +
+            0.05 * diversity_score
         )
+
+    def _get_onboarding_liked_book_ids(self, user_id: int) -> set[int]:
+        from app.db.models import OnboardingLikedBook
+        liked = self.db.query(OnboardingLikedBook.book_id).filter(OnboardingLikedBook.user_id == user_id).all()
+        return {item[0] for item in liked}
+
+    def _get_book_genre_score(self, book: Book, preferred_genres: List[str]) -> float:
+        if not preferred_genres:
+            return 0.5
+        book_genres = {g.name.lower() for g in book.genres} if book.genres else set()
+        preferred = {g.lower() for g in preferred_genres}
+        overlap = len(book_genres & preferred)
+        return min(overlap / max(len(preferred), 1), 1.0)
+
+    def _get_book_author_score(self, book: Book, preferred_authors: List[str]) -> float:
+        if not preferred_authors or not book.author:
+            return 0.5
+        preferred_authors_lower = {a.lower() for a in preferred_authors}
+        if book.author.name.lower() in preferred_authors_lower:
+            return 1.0
+        return 0.5
 
     def _get_user_profile(self, user_id: int):
         preferences = self.db.query(UserPreference).filter(
@@ -157,15 +182,42 @@ class RecommendationService:
         else:
             books = self.get_hybrid_recommendations(user_id, limit, exclude_book_ids)
 
+        preferences, user_ratings, user_library = self._get_user_profile(user_id)
+        preferred_genres = preferences.preferred_genres if preferences else []
+        preferred_authors = preferences.preferred_authors if preferences else []
+        onboarding_liked_ids = self._get_onboarding_liked_book_ids(user_id)
+        
+        # Load similarity model if we want to calculate actual similarity
+        recommender = _load_recommender_model()
+        sim_scores = {}
+        if recommender and (user_ratings or onboarding_liked_ids):
+            try:
+                book_ids = recommender['book_ids']
+                tfidf_matrix = recommender['tfidf_matrix']
+                liked_book_ids = [r.book_id for r in user_ratings] if user_ratings else list(onboarding_liked_ids)
+                indices = [i for i, b_id in enumerate(book_ids) if b_id in liked_book_ids]
+                if indices:
+                    user_profile = tfidf_matrix[indices].mean(axis=0)
+                    user_profile = np.asarray(user_profile)
+                    cosine_sim = cosine_similarity(user_profile, tfidf_matrix).flatten()
+                    for idx, sim_val in enumerate(cosine_sim):
+                        sim_scores[book_ids[idx]] = float(sim_val)
+            except Exception as e:
+                print(f"Error computing similarity for explanation: {e}")
+
         results = []
+        import random
         for book in books:
             explanation = self.generate_explanation(book, user_id, algorithm, "recommendation")
+            sim = sim_scores.get(book.id, 0.0)
             score = self._weighted_score(
-                similarity_score=self._popularity_score(book),
-                user_preference_score=self._genre_preference_score(book, self._get_user_profile(user_id)[0]),
+                similarity_score=sim,
+                genre_score=self._get_book_genre_score(book, preferred_genres),
+                author_score=self._get_book_author_score(book, preferred_authors),
+                onboarding_liked_score=1.0 if book.id in onboarding_liked_ids else 0.0,
                 popularity_score=self._popularity_score(book),
-                rating_score=self._rating_score(book),
                 freshness_score=self._freshness_score(book),
+                diversity_score=random.random()
             )
             results.append((book, explanation, score))
 
@@ -182,8 +234,9 @@ class RecommendationService:
 
         recommender = _load_recommender_model()
         preferences, user_ratings, user_library = self._get_user_profile(user_id)
+        onboarding_liked_ids = self._get_onboarding_liked_book_ids(user_id)
 
-        if not user_ratings and (not preferences or not preferences.preferred_genres):
+        if not user_ratings and not onboarding_liked_ids and (not preferences or not preferences.preferred_genres):
             return self.book_service.get_trending_books(limit)
 
         try:
@@ -191,8 +244,14 @@ class RecommendationService:
                 book_ids = recommender['book_ids']
                 tfidf_matrix = recommender['tfidf_matrix']
 
+                # Get liked book IDs from ratings OR onboarding liked books
+                liked_book_ids = []
                 if user_ratings:
                     liked_book_ids = [r.book_id for r in user_ratings]
+                else:
+                    liked_book_ids = list(onboarding_liked_ids)
+
+                if liked_book_ids:
                     indices = [i for i, b_id in enumerate(book_ids) if b_id in liked_book_ids]
 
                     if not indices:
@@ -218,15 +277,21 @@ class RecommendationService:
                         books_dict[b.id] = b
 
                     scored = []
+                    preferred_genres = preferences.preferred_genres if preferences else []
+                    preferred_authors = preferences.preferred_authors if preferences else []
+                    import random
+                    
                     for b_id, sim in candidates:
                         if b_id in books_dict:
                             book = books_dict[b_id]
                             score = self._weighted_score(
                                 similarity_score=sim,
-                                user_preference_score=self._genre_preference_score(book, preferences),
+                                genre_score=self._get_book_genre_score(book, preferred_genres),
+                                author_score=self._get_book_author_score(book, preferred_authors),
+                                onboarding_liked_score=1.0 if book.id in onboarding_liked_ids else 0.0,
                                 popularity_score=self._popularity_score(book),
-                                rating_score=self._rating_score(book),
                                 freshness_score=self._freshness_score(book),
+                                diversity_score=random.random()
                             )
                             scored.append((book, score))
 
@@ -330,9 +395,12 @@ class RecommendationService:
 
     def get_personalized_picks(self, user_id: int, limit: int = 12) -> List[Book]:
         preferences, user_ratings, user_library = self._get_user_profile(user_id)
-        if not preferences or not preferences.preferred_genres:
+        onboarding_liked_ids = list(self._get_onboarding_liked_book_ids(user_id))
+        
+        if not user_ratings and not onboarding_liked_ids and (not preferences or not preferences.preferred_genres):
             return self.book_service.get_trending_books(limit)
-        exclude_ids = [r.book_id for r in user_ratings] + [e.book_id for e in user_library]
+            
+        exclude_ids = [r.book_id for r in user_ratings] + [e.book_id for e in user_library] + onboarding_liked_ids
         return self.get_content_based_recommendations(user_id, limit, exclude_ids)
 
     def get_readers_also_enjoyed(self, book_id: int, limit: int = 8) -> List[Book]:

@@ -151,3 +151,29 @@ class UserService:
         return self.db.query(Review).filter(
             Review.user_id == user_id
         ).order_by(Review.created_at.desc()).all()
+
+    def check_and_update_onboarding(self, user_id: int) -> bool:
+        """Check if user needs onboarding or can be auto-onboarded because of history"""
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return False
+            
+        if user.onboarded:
+            return True
+            
+        # Check library
+        from app.db.models import LibraryEntry, RecommendationLog
+        has_library = self.db.query(LibraryEntry).filter(LibraryEntry.user_id == user_id).first() is not None
+        if has_library:
+            user.onboarded = True
+            self.db.commit()
+            return True
+            
+        # Check recommendation history
+        has_history = self.db.query(RecommendationLog).filter(RecommendationLog.user_id == user_id).first() is not None
+        if has_history:
+            user.onboarded = True
+            self.db.commit()
+            return True
+            
+        return False

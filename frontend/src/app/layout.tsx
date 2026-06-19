@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "../components/NavBar";
 import Toast from "../components/Toast";
+import OnboardingGuard from "../components/OnboardingGuard";
 
 export const metadata: Metadata = {
   title: "LitRealm - Intelligent Book Recommendation System",
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NavBar />
         <Toast />
         <main style={{ minHeight: "calc(100vh - 72px)" }}>
-          {children}
+          <OnboardingGuard>
+            {children}
+          </OnboardingGuard>
         </main>
         <footer style={{
           background: "linear-gradient(135deg, #0E172A 0%, #1A1035 100%)",

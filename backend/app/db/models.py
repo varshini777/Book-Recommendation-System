@@ -31,6 +31,7 @@ class User(Base):
     role = Column(String(50), default='user')  # 'user' or 'admin'
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
+    onboarded = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = Column(DateTime)
@@ -390,3 +391,70 @@ class CollectionBook(Base):
         UniqueConstraint('collection_id', 'book_id', name='uq_collection_book'),
         {'extend_existing': True}
     )
+
+
+class UserGenre(Base):
+    __tablename__ = 'user_genres'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    genre_id = Column(Integer, ForeignKey('genres.id', ondelete='CASCADE'), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    genre = relationship("Genre")
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'genre_id', name='uq_user_genre'),
+        {'extend_existing': True}
+    )
+
+
+class UserAuthor(Base):
+    __tablename__ = 'user_authors'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    author_id = Column(Integer, ForeignKey('authors.id', ondelete='CASCADE'), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    author = relationship("Author")
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'author_id', name='uq_user_author'),
+        {'extend_existing': True}
+    )
+
+
+class UserInterest(Base):
+    __tablename__ = 'user_interests'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    interest = Column(String(100), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'interest', name='uq_user_interest'),
+        {'extend_existing': True}
+    )
+
+
+class OnboardingLikedBook(Base):
+    __tablename__ = 'onboarding_liked_books'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", backref="liked_books_association")
+    book = relationship("Book", backref="liked_by_users_association")
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'book_id', name='uq_onboarding_liked_book'),
+        {'extend_existing': True}
+    )
+

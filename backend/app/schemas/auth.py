@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     is_verified: bool
+    onboarded: bool
     created_at: datetime
     
     class Config:

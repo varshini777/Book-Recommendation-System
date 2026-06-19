@@ -51,16 +51,51 @@ def get_genres(db: Session = Depends(get_db)):
     return [{"id": g.id, "name": g.name, "description": g.description} for g in genres]
 
 
+@router.get("/onboarding-samples")
+def get_onboarding_samples(
+    genres: Optional[str] = None,
+    limit: int = Query(30, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """Get sample books for onboarding selection. Optionally filtered by preferred genres."""
+    query = db.query(Book).options(joinedload(Book.author), joinedload(Book.genres)).filter(Book.is_active == True)
+    
+    if genres:
+        genre_list = [g.strip() for g in genres.split(",") if g.strip()]
+        if genre_list:
+            query = query.join(Book.genres).filter(Genre.name.in_(genre_list))
+            
+    # Sort by rating count / rating to show high quality, recognizable books
+    books = query.order_by(Book.rating_count.desc(), Book.rating.desc()).limit(limit).all()
+    
+    # If not enough books found with the genre filter, fill up with general popular books
+    if len(books) < limit:
+        existing_ids = {b.id for b in books}
+        fill_limit = limit - len(books)
+        fill_books = db.query(Book).options(joinedload(Book.author), joinedload(Book.genres))\
+            .filter(Book.is_active == True, Book.id.notin_(existing_ids))\
+            .order_by(Book.rating_count.desc(), Book.rating.desc())\
+            .limit(fill_limit).all()
+        books.extend(fill_books)
+        
+    return {"books": [_book_to_response(b) for b in books]}
+
+
 @router.get("/authors/list")
 def get_authors(
     search: Optional[str] = None,
+    popular: bool = False,
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db)
 ):
-    query = db.query(Author)
-    if search:
-        query = query.filter(Author.name.ilike(f"%{search}%"))
-    authors = query.order_by(Author.name).limit(limit).all()
+    from sqlalchemy import func
+    if popular:
+        authors = db.query(Author).join(Book).group_by(Author.id).order_by(func.sum(Book.rating_count).desc()).limit(limit).all()
+    else:
+        query = db.query(Author)
+        if search:
+            query = query.filter(Author.name.ilike(f"%{search}%"))
+        authors = query.order_by(Author.name).limit(limit).all()
     return [{"id": a.id, "name": a.name} for a in authors]
 
 

@@ -4,6 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import { Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -37,7 +39,7 @@ function ResetPasswordForm() {
     setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8000/auth/reset-password', {
+      const response = await fetch(`${API}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, new_password: password }),

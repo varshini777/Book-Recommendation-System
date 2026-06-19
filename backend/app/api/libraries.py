@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from app.db import get_db
-from app.db.models import LibraryEntry, CartEntry, Book
+from app.db.models import LibraryEntry, CartEntry, Book, Author
 from app.schemas.library import LibraryEntryCreate, LibraryEntryUpdate, LibraryEntryResponse, CartEntryCreate, CartEntryResponse
 from app.core.security import get_current_user_id
 
@@ -16,8 +16,10 @@ def get_library(
     is_bookmarked: bool = None,
     db: Session = Depends(get_db)
 ):
-    """Get user's library entries"""
-    query = db.query(LibraryEntry).filter(LibraryEntry.user_id == user_id)
+    """Get user's library entries (eager loaded to avoid N+1)"""
+    query = db.query(LibraryEntry).options(
+        joinedload(LibraryEntry.book).joinedload(Book.author)
+    ).filter(LibraryEntry.user_id == user_id)
     
     if status_filter:
         query = query.filter(LibraryEntry.status == status_filter)
@@ -30,7 +32,7 @@ def get_library(
     
     result = []
     for entry in entries:
-        book = db.query(Book).filter(Book.id == entry.book_id).first()
+        book = entry.book
         result.append({
             "id": entry.id,
             "user_id": entry.user_id,
@@ -155,8 +157,9 @@ def update_library_entry(
     
     db.commit()
     db.refresh(entry)
-    
-    book = db.query(Book).filter(Book.id == entry.book_id).first()
+
+    db.refresh(entry, attribute_names=['book'])
+    book = entry.book
     return {
         "id": entry.id,
         "user_id": entry.user_id,
@@ -199,10 +202,12 @@ def get_cart(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    entries = db.query(CartEntry).filter(CartEntry.user_id == user_id).all()
+    entries = db.query(CartEntry).options(
+        joinedload(CartEntry.book).joinedload(Book.author)
+    ).filter(CartEntry.user_id == user_id).all()
     result = []
     for entry in entries:
-        book = db.query(Book).filter(Book.id == entry.book_id).first()
+        book = entry.book
         result.append({
             "id": entry.id,
             "user_id": entry.user_id,

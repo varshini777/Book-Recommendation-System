@@ -1,7 +1,7 @@
 'use client';
 import { useAppStore } from '../../lib/zustandStore';
 import { useState, useEffect } from 'react';
-import { User, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -11,6 +11,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (user) router.replace('/');
@@ -18,47 +19,89 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    
+
     const success = await login(email, password);
     if (success) {
       router.replace('/');
     } else {
-      alert('Invalid credentials');
+      setError('Invalid email or password. Please try again.');
     }
     setLoading(false);
   };
 
   return (
-    <div className="card" style={{ maxWidth: '420px', margin: '80px auto', padding: '36px', borderRadius: '24px' }}>
-      <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.8rem', color: '#6A1B29', marginBottom: '24px', textAlign: 'center' }}>
-        <User size={24} style={{ marginRight: '8px' }} />
-        Sign In
-      </h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, color: '#4A4540' }}>
-            <Mail size={16} /> Email
-          </label>
-          <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="input-field" />
+    <div style={{
+      minHeight: 'calc(100vh - 72px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '40px 24px',
+      background: 'linear-gradient(135deg, var(--cream) 0%, var(--surface) 100%)',
+    }}>
+      <div className="card" style={{
+        maxWidth: '440px', width: '100%', padding: '40px',
+        borderRadius: '28px',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '16px',
+            background: 'linear-gradient(135deg, var(--burgundy), var(--gold))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px auto',
+            boxShadow: '0 4px 12px rgba(106, 27, 41, 0.2)',
+          }}>
+            <BookOpen size={28} color="white" />
+          </div>
+          <h2 style={{
+            fontFamily: 'Playfair Display, serif', fontSize: '1.6rem',
+            color: 'var(--text-primary)', margin: '0 0 6px 0', fontWeight: 800,
+          }}>
+            Welcome Back
+          </h2>
+          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem', fontWeight: 500 }}>
+            Sign in to access your library and recommendations.
+          </p>
         </div>
-        <div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, color: '#4A4540' }}>
-            <Lock size={16} /> Password
-          </label>
-          <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="input-field" />
-        </div>
-        <button type="submit" className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }} disabled={loading}>
-          {loading ? 'Signing in...' : <><ArrowRight size={16} /> Sign In</>}
-        </button>
-      </form>
-      <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.85rem', color: '#8A827A' }}>
-        Don&apos;t have an account?{' '}
-        <Link href="/register" style={{ color: '#6A1B29', fontWeight: 600 }}>Register</Link>
-      </p>
-      <p style={{ textAlign: 'center', marginTop: '8px', fontSize: '0.85rem', color: '#8A827A' }}>
-        <Link href="/forgot-password" style={{ color: '#6A1B29', fontWeight: 600 }}>Forgot password?</Link>
-      </p>
+
+        {error && (
+          <div style={{
+            background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)',
+            borderRadius: '12px', padding: '12px 16px', marginBottom: '20px',
+            color: '#dc2626', fontSize: '0.85rem', fontWeight: 500,
+          }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              <Mail size={14} /> Email
+            </label>
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+              className="input-field" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              <Lock size={14} /> Password
+            </label>
+            <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
+              className="input-field" placeholder="Enter your password" />
+          </div>
+          <button type="submit" className="btn-primary" style={{
+            padding: '14px 24px', fontSize: '0.95rem',
+            display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+            marginTop: '4px',
+          }} disabled={loading}>
+            {loading ? 'Signing in...' : <><ArrowRight size={16} /> Sign In</>}
+          </button>
+        </form>
+
+        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Don&apos;t have an account?{' '}
+          <Link href="/register" style={{ color: 'var(--burgundy)', fontWeight: 700 }}>Create one</Link>
+        </p>
+      </div>
     </div>
   );
 }

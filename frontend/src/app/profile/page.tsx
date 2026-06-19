@@ -1,293 +1,160 @@
 'use client';
-import { useAppStore } from '../../lib/zustandStore';
+import { useAppStore } from '@/lib/zustandStore';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Sparkles, Award, ShieldAlert, Globe, Layers, BookOpen, Settings, LogOut } from 'lucide-react';
+import { User, BookOpen, Star, Award, Flame, Target, TrendingUp, Library, LogOut, Settings, Calendar, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
-const GENRES = ['Fiction', 'Non-Fiction', 'Mystery', 'Romance', 'Science Fiction', 'Fantasy', 'Thriller', 'Historical', 'Biography', 'Self-Help', 'Business', 'Philosophy', 'Poetry', 'Drama', 'Adventure'];
-const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Korean', 'Russian'];
-
 export default function Profile() {
-  const { user, token, library, logout } = useAppStore();
+  const { user, library, logout, addToast } = useAppStore();
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      setName(user.name);
-      setEmail(user.email);
-    }
-  }, [user]);
+    if (!user) router.replace('/login');
+    calculateStreak();
+  }, [user, library]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      // Update user profile
-      const response = await fetch('http://localhost:8000/users/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, avatar: '👤' }),
-      });
-      
-      if (response.ok) {
-        // Update preferences
-        const prefsResponse = await fetch('http://localhost:8000/users/me/preferences', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            preferred_genres: selectedGenres,
-            preferred_languages: selectedLangs,
-            preferred_authors: [],
-            onboarding_completed: true
-          }),
-        });
-        
-        if (prefsResponse.ok) {
-          alert('Profile and preferences updated successfully!');
-        } else {
-          alert('Profile updated but preferences failed');
-        }
-      } else {
-        alert('Error updating profile');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error updating profile');
-    } finally {
-      setLoading(false);
-    }
+  const calculateStreak = () => {
+    if (library.length === 0) return;
+    const days = Math.min(library.filter(e => e.status === 'completed' || e.progress > 0).length, 30);
+    setStreak(days);
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
+  if (!user) return null;
 
-  const toggleGenre = (genre: string) => {
-    setSelectedGenres(prev => 
-      prev.includes(genre) ? prev.filter(g => g !== genre) : [...prev, genre]
-    );
-  };
-
-  const toggleLang = (lang: string) => {
-    setSelectedLangs(prev => 
-      prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
-    );
-  };
-
-  // Profile Statistics
   const totalBooks = library.length;
-  const currentlyReading = library.filter(e => e.shelf === 'Currently Reading').length;
-  const completed = library.filter(e => e.shelf === 'Completed').length;
-  const ratedBooks = library.filter(e => e.rating > 0);
-  const avgRating = ratedBooks.length > 0 
-    ? (ratedBooks.reduce((acc, curr) => acc + curr.rating, 0) / ratedBooks.length).toFixed(1)
-    : '0.0';
+  const reading = library.filter(e => e.status === 'currently_reading').length;
+  const completed = library.filter(e => e.status === 'completed').length;
+  const wantToRead = library.filter(e => e.status === 'want_to_read').length;
+  const rated = library.filter(e => e.rating > 0);
+  const avg = rated.length > 0 ? (rated.reduce((a, c) => a + c.rating, 0) / rated.length) : 0;
+  const totalProgress = library.reduce((a, e) => a + e.progress, 0);
+  const avgProgress = totalBooks > 0 ? Math.round(totalProgress / totalBooks) : 0;
+  const pagesRead = library.reduce((a, e) => a + (e.book?.pages || 300) * (e.progress / 100), 0);
+  const goalProgress = completed > 0 ? Math.min(100, (completed / 12) * 100) : 0;
 
-  if (!user) {
-    return (
-      <div style={{ textAlign: 'center', padding: '100px 20px' }}>
-        <h2 style={{ fontSize: '1.5rem', color: '#6A1B29', marginBottom: '20px' }}>
-          Please sign in to view your profile
-        </h2>
-        <Link href="/login" className="btn-primary">Sign In</Link>
+  const StatCard = ({ icon: Icon, label, value, sub, color }: any) => (
+    <div style={{ background: '#F5EFEB', padding: '20px 16px', borderRadius: 16, border: '1px solid #E8E2D9', textAlign: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+        <div style={{ padding: 8, background: '#fff', borderRadius: 12, display: 'flex' }}>
+          <Icon size={20} style={{ color: color || '#6A1B29' }} />
+        </div>
       </div>
-    );
-  }
+      <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>{value}</div>
+      <div style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600, marginTop: 4 }}>{label}</div>
+      {sub && <div style={{ fontSize: '0.7rem', color: '#8A827A', fontWeight: 500, marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '48px 24px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }} className="fade-in profile-grid">
-      
-      {/* Column 1: Stats & Actions */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-        {/* User Card */}
-        <div className="card" style={{ padding: '36px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
-          <div style={{ 
-            width: '100px', 
-            height: '100px', 
-            borderRadius: '50%', 
-            background: 'linear-gradient(135deg, #6A1B29, #D4AF37)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            boxShadow: '0 10px 25px rgba(106, 27, 41, 0.15)',
-            border: '4px solid #FCFAF6'
-          }}>
-            <User size={40} color="white" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '1.6rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0, color: '#1E1B18' }}>
-              {name || 'Reader'}
-            </h2>
-            <p style={{ color: '#8A827A', fontSize: '0.9rem', margin: '6px 0 0 0', fontWeight: 500 }}>
-              {email || 'reader@example.com'}
-            </p>
-            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-              <Link href="/edit-profile" className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem', justifyContent: 'center' }}>
-                Edit Profile
-              </Link>
-              <Link href="/settings" className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem', justifyContent: 'center' }}>
-                <Settings size={14} />
-              </Link>
-            </div>
-          </div>
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 24px' }} className="fade-in">
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 40, flexWrap: 'wrap' }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, #6A1B29, #D4AF37)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px solid #FCFAF6', boxShadow: '0 10px 25px rgba(106,27,41,0.15)' }}>
+          <User size={32} color="white" />
         </div>
-
-        {/* Reading Stats */}
-        <div className="card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontFamily: 'Playfair Display, serif', color: '#6A1B29', borderBottom: '1px solid #E8E2D9', paddingBottom: '10px', margin: 0, fontWeight: 800 }}>
-            Reading Analytics
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
-              <Layers size={18} style={{ color: '#6A1B29', marginBottom: '6px' }} />
-              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>{totalBooks}</span>
-              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Library Books</span>
-            </div>
-            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
-              <BookOpen size={18} style={{ color: '#6A1B29', marginBottom: '6px' }} />
-              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>{currentlyReading}</span>
-              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Reading Now</span>
-            </div>
-            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
-              <Sparkles size={18} style={{ color: '#D4AF37', marginBottom: '6px' }} />
-              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>{completed}</span>
-              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Completed</span>
-            </div>
-            <div style={{ background: '#F5EFEB', padding: '16px 12px', borderRadius: '14px', textAlign: 'center', border: '1px solid #E8E2D9' }}>
-              <Award size={18} style={{ color: '#6A1B29', marginBottom: '6px' }} />
-              <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: 800, color: '#1E1B18', lineHeight: 1.2 }}>★ {avgRating}</span>
-              <span style={{ fontSize: '0.75rem', color: '#8A827A', fontWeight: 600 }}>Avg Rating</span>
-            </div>
-          </div>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ fontSize: '2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0, color: '#1E1B18' }}>{user.name}</h1>
+          <p style={{ color: '#8A827A', margin: '4px 0 0 0', fontSize: '0.9rem', fontWeight: 500 }}>{user.email}</p>
         </div>
-
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '16px 24px',
-            background: '#DC2626',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            justifyContent: 'center'
-          }}
-        >
-          <LogOut size={16} />
-          Sign Out
-        </button>
-      </div>
-
-      {/* Column 2: Edit Preferences Form */}
-      <div className="card" style={{ padding: '48px' }}>
-        <h1 style={{ fontSize: '2.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: '#6A1B29', margin: '0 0 28px 0' }}>
-          Reading Preferences
-        </h1>
-
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-          
-          {/* Section 1: Genres */}
-          <div>
-            <h3 style={{ fontSize: '1.2rem', color: '#0E172A', borderBottom: '1px solid #E8E2D9', paddingBottom: '8px', marginBottom: '18px', fontFamily: 'Playfair Display, serif', fontWeight: 800 }}>
-              My Genres (Recommendations Source)
-            </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {GENRES.map(g => {
-                const isSelected = selectedGenres.includes(g);
-                return (
-                  <button
-                    type="button"
-                    key={g}
-                    onClick={() => toggleGenre(g)}
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: '24px',
-                      border: '2px solid',
-                      borderColor: isSelected ? '#6A1B29' : '#E8E2D9',
-                      background: isSelected ? '#6A1B29' : 'transparent',
-                      color: isSelected ? 'white' : '#4A4540',
-                      fontWeight: 700,
-                      fontSize: '0.8rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                      boxShadow: isSelected ? '0 4px 10px rgba(106,27,41,0.12)' : 'none'
-                    }}
-                  >
-                    {g}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Section 2: Languages */}
-          <div>
-            <h3 style={{ fontSize: '1.2rem', color: '#0E172A', borderBottom: '1px solid #E8E2D9', paddingBottom: '8px', marginBottom: '18px', fontFamily: 'Playfair Display, serif', fontWeight: 800 }}>
-              Preferred Languages
-            </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {LANGUAGES.map(l => {
-                const isSelected = selectedLangs.includes(l);
-                return (
-                  <button
-                    type="button"
-                    key={l}
-                    onClick={() => toggleLang(l)}
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: '24px',
-                      border: '2px solid',
-                      borderColor: isSelected ? '#D4AF37' : '#E8E2D9',
-                      background: isSelected ? '#D4AF37' : 'transparent',
-                      color: isSelected ? 'white' : '#4A4540',
-                      fontWeight: 700,
-                      fontSize: '0.8rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                      boxShadow: isSelected ? '0 4px 10px rgba(212,175,55,0.12)' : 'none'
-                    }}
-                  >
-                    {l}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <button type="submit" className="btn-primary" style={{ marginTop: '16px', justifyContent: 'center', padding: '16px', borderRadius: '14px' }} disabled={loading}>
-            {loading ? 'Saving...' : <><span>Save Preferences</span><Globe size={18} /></>}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link href="/edit-profile" className="btn-secondary" style={{ padding: '10px 20px', fontSize: '0.85rem' }}><Settings size={14} /> Edit</Link>
+          <button onClick={() => { logout(); router.push('/login'); }}
+            style={{ padding: '10px 20px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
+            <LogOut size={14} /> Sign Out
           </button>
-        </form>
+        </div>
       </div>
 
-      <style>{`
-        @media (max-width: 900px) {
-          .profile-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16, marginBottom: 40 }}>
+        <StatCard icon={Library} label="Total Books" value={totalBooks} color="#6A1B29" />
+        <StatCard icon={BookOpen} label="Currently Reading" value={reading} color="#3b82f6" />
+        <StatCard icon={Star} label="Completed" value={completed} color="#10b981" />
+        <StatCard icon={Flame} label="Reading Streak" value={`${streak}d`} color="#f59e0b" sub="days active" />
+        <StatCard icon={Target} label="Avg Rating" value={avg.toFixed(1)} color="#D4AF37" sub="/ 5" />
+        <StatCard icon={TrendingUp} label="Avg Progress" value={`${avgProgress}%`} color="#8B5CF6" />
+        <StatCard icon={Calendar} label="Pages Read" value={Math.round(pagesRead).toLocaleString()} color="#EC4899" />
+        <StatCard icon={Award} label="Want to Read" value={wantToRead} color="#6B7280" />
+      </div>
+
+      {/* Reading Goal & Analytics */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 28, marginBottom: 40 }}>
+        {/* Goal */}
+        <div className="card" style={{ padding: 32 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0, color: '#0E172A' }}>
+              <Target size={18} style={{ color: '#D4AF37', marginRight: 8 }} /> 2026 Reading Goal
+            </h3>
+            <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#6A1B29' }}>{completed} / 12</span>
+          </div>
+          <div className="progress-bar" style={{ height: 12, marginBottom: 8 }}>
+            <div className="progress-fill" style={{ width: `${goalProgress}%` }} />
+          </div>
+          <p style={{ margin: 0, fontSize: '0.82rem', color: '#8A827A', fontWeight: 500 }}>
+            {goalProgress >= 100 ? 'Goal completed! Amazing!' : `${12 - completed} more books to reach your goal`}
+          </p>
+        </div>
+
+        {/* Genre distribution */}
+        <div className="card" style={{ padding: 32 }}>
+          <h3 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: '0 0 16px 0', color: '#0E172A' }}>
+            <Award size={18} style={{ color: '#D4AF37', marginRight: 8 }} /> Library Breakdown
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { label: 'Completed', value: completed, pct: totalBooks > 0 ? (completed / totalBooks) * 100 : 0, color: '#10b981' },
+              { label: 'Reading', value: reading, pct: totalBooks > 0 ? (reading / totalBooks) * 100 : 0, color: '#3b82f6' },
+              { label: 'Want to Read', value: wantToRead, pct: totalBooks > 0 ? (wantToRead / totalBooks) * 100 : 0, color: '#6B7280' },
+            ].map(d => (
+              <div key={d.label}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: '#4A4540', marginBottom: 4 }}>
+                  <span>{d.label}</span><span>{d.value} ({Math.round(d.pct)}%)</span>
+                </div>
+                <div className="progress-bar" style={{ height: 6 }}>
+                  <div style={{ height: '100%', borderRadius: 6, background: d.color, width: `${d.pct}%`, transition: 'width 0.6s' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="card" style={{ padding: 32 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0, color: '#0E172A' }}>
+            Recent Activity
+          </h3>
+          <Link href="/library" style={{ color: '#6A1B29', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+            View Library <ChevronRight size={14} />
+          </Link>
+        </div>
+        {library.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {library.slice(0, 5).map(e => (
+              <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 12, background: '#F5EFEB', borderRadius: 12, border: '1px solid #E8E2D9' }}>
+                <div style={{ width: 36, height: 50, background: '#fff', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#8A827A' }}>📚</div>
+                <div style={{ flex: 1 }}>
+                  <Link href={`/catalog/${e.book_id}`} style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1E1B18', textDecoration: 'none' }}>
+                    {e.book?.title || `Book #${e.book_id}`}
+                  </Link>
+                  <div style={{ fontSize: '0.75rem', color: '#8A827A', marginTop: 2 }}>
+                    {e.status?.replace(/_/g, ' ')} · {e.progress}% complete
+                  </div>
+                </div>
+                {e.rating > 0 && <span style={{ color: '#D4AF37', fontWeight: 700 }}>{'★'.repeat(e.rating)}</span>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: 40, color: '#8A827A' }}>
+            <p style={{ fontWeight: 600 }}>No books in your library yet.</p>
+            <Link href="/catalog" className="btn-primary" style={{ marginTop: 16, display: 'inline-flex' }}>Browse Books</Link>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { useAppStore } from '../../lib/zustandStore';
 import { User, Mail, Camera, Save, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function EditProfile() {
   const { user, setUser } = useAppStore();
   const [name, setName] = useState(user?.name || '');
@@ -15,7 +17,7 @@ export default function EditProfile() {
     setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8000/users/me', {
+      const response = await fetch(`${API}/users/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

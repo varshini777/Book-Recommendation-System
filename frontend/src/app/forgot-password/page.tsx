@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -13,7 +15,7 @@ export default function ForgotPassword() {
     setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8000/auth/forgot-password', {
+      const response = await fetch(`${API}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

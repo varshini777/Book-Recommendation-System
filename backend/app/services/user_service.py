@@ -80,10 +80,10 @@ class UserService:
         total_books = len(library_entries)
         avg_progress = sum(entry.progress for entry in library_entries) / total_books if total_books > 0 else 0
         
-        # Count by shelf
+        # Count by status
         shelf_counts = {}
         for entry in library_entries:
-            shelf_counts[entry.shelf] = shelf_counts.get(entry.shelf, 0) + 1
+            shelf_counts[entry.status] = shelf_counts.get(entry.status, 0) + 1
         
         # Count by genre
         genre_counts = {}
@@ -137,12 +137,12 @@ class UserService:
         
         return user
     
-    def get_user_library(self, user_id: int, shelf: Optional[str] = None) -> List[LibraryEntry]:
+    def get_user_library(self, user_id: int, status_filter: Optional[str] = None) -> List[LibraryEntry]:
         """Get user's library entries"""
         query = self.db.query(LibraryEntry).filter(LibraryEntry.user_id == user_id)
         
-        if shelf:
-            query = query.filter(LibraryEntry.shelf == shelf)
+        if status_filter:
+            query = query.filter(LibraryEntry.status == status_filter)
         
         return query.order_by(LibraryEntry.updated_at.desc()).all()
     

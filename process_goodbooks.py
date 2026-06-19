@@ -1,104 +1,146 @@
 """
 Process Goodbooks-10k dataset to generate cleaned dataset
 for the Book Recommendation System.
+Uses real book data from the Goodbooks-10k dataset.
+No fake books, no synthetic data.
 """
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import sys
 import time
-import re
 
-# Allowed genres mapping (tag name keywords -> our genre name)
 ALLOWED_GENRE_KEYWORDS = {
     'technology': 'Technology',
     'computer-science': 'Computer Science',
     'computer': 'Computer Science',
+    'computers': 'Technology',
+    'programming': 'Technology',
+    'software': 'Technology',
     'cybersecurity': 'Cybersecurity',
     'cyber': 'Cybersecurity',
+    'security': 'Cybersecurity',
     'data-science': 'Data Science',
     'data': 'Data Science',
+    'datasets': 'Data Science',
     'artificial-intelligence': 'Artificial Intelligence',
     'ai': 'Artificial Intelligence',
     'machine-learning': 'Artificial Intelligence',
+    'neural-networks': 'Artificial Intelligence',
+    'deep-learning': 'Artificial Intelligence',
+    'algorithms': 'Computer Science',
+    'coding': 'Technology',
     'business': 'Business',
+    'entrepreneurship': 'Business',
+    'management': 'Business',
+    'economics': 'Business',
     'finance': 'Finance',
+    'investing': 'Finance',
+    'money': 'Finance',
     'psychology': 'Psychology',
+    'behavioral-psychology': 'Psychology',
+    'cognitive-psychology': 'Psychology',
+    'social-psychology': 'Psychology',
+    'neuroscience': 'Science',
     'productivity': 'Productivity',
+    'self-management': 'Productivity',
     'biography': 'Biography',
+    'memoir': 'Biography',
+    'autobiography': 'Biography',
     'history': 'History',
+    'historical': 'History',
     'philosophy': 'Philosophy',
     'science': 'Science',
+    'scientific': 'Science',
     'physics': 'Physics',
     'space': 'Space',
+    'astronomy': 'Space',
+    'cosmology': 'Space',
     'mystery': 'Mystery',
+    'crime': 'Mystery',
+    'detective': 'Mystery',
+    'noir': 'Mystery',
+    'suspense': 'Thriller',
     'thriller': 'Thriller',
+    'psychological-thriller': 'Thriller',
     'adventure': 'Adventure',
     'fantasy': 'Fantasy',
+    'epic-fantasy': 'Fantasy',
+    'urban-fantasy': 'Fantasy',
     'education': 'Education',
     'self-help': 'Self Help',
     'leadership': 'Leadership',
     'innovation': 'Innovation',
     'science-fiction': 'Science',
     'sci-fi': 'Science',
+    'fiction': 'Fiction',
 }
 
 EXCLUDED_KEYWORDS = [
     'romance', 'adult', 'erotica', 'nsfw', 'explicit',
     'mature', 'dark-romance', 'sex', 'porn', 'spank',
-    'billionaire-romance', 'romance', 'love-story',
+    'billionaire-romance', 'love-story', 'erotic',
+    'adult-fiction', 'new-adult', 'paranormal-romance',
+    'historical-romance', 'contemporary-romance',
+    'young-adult', 'ya', 'teen',
 ]
 
-def normalize_tag(tag):
-    return tag.lower().replace(' ', '-').replace('_', '-').strip('-')
-
+FICTION_GENRES = {'Adventure', 'Fantasy', 'Mystery', 'Thriller', 'Science', 'Space', 'Physics'}
 
 def match_genres(tag_name):
     tag_lower = tag_name.lower().replace(' ', '-').replace('_', '-').strip('-')
     for exclude in EXCLUDED_KEYWORDS:
         if exclude in tag_lower:
             return []
-    matched = []
+    matched = set()
     for keyword, genre in ALLOWED_GENRE_KEYWORDS.items():
-        if keyword == tag_lower or (keyword in tag_lower and len(keyword) > 3):
-            matched.append(genre)
-        elif tag_lower in keyword:
-            matched.append(genre)
-    if tag_lower == 'fantasy':
-        matched.append('Fantasy')
-    if tag_lower == 'mystery':
-        matched.append('Mystery')
-    if tag_lower == 'thriller':
-        matched.append('Thriller')
-    if tag_lower == 'adventure':
-        matched.append('Adventure')
-    if tag_lower == 'fiction' or tag_lower == 'non-fiction' or tag_lower == 'nonfiction':
+        if keyword == tag_lower:
+            matched.add(genre)
+        elif len(keyword) > 3 and keyword in tag_lower:
+            matched.add(genre)
+    if tag_lower in ('fiction', 'non-fiction', 'nonfiction', 'literature', 'novels', 'books'):
         return []
-    return list(set(matched))
+    if tag_lower == 'fantasy':
+        matched.add('Fantasy')
+    if tag_lower == 'mystery':
+        matched.add('Mystery')
+    if tag_lower == 'thriller':
+        matched.add('Thriller')
+    if tag_lower == 'adventure':
+        matched.add('Adventure')
+    return list(matched)
+
+
+def safe_str(val):
+    if pd.isna(val):
+        return ''
+    s = str(val).strip()
+    return '' if s.lower() == 'nan' else s
 
 
 def generate_description(row):
     parts = []
-    if pd.notna(row.get('original_title')) and str(row['original_title']).strip():
-        parts.append(f'"{str(row["original_title"]).strip()}"')
-    else:
-        parts.append(f'"{str(row["title"]).strip()}"')
-    if pd.notna(row.get('authors')) and str(row['authors']).strip():
-        parts.append(f'by {str(row["authors"]).strip()}')
+    title = safe_str(row.get('title', ''))
+    author = safe_str(row.get('authors', ''))
     genre = row.get('genre', '')
+    year = row.get('original_publication_year', '')
+    rating = row.get('average_rating', '')
+
+    if title:
+        parts.append(f'"{title}"')
+    if author:
+        parts.append(f'by {author}')
     if genre:
         parts.append(f'covers {genre.lower()}')
-    year = row.get('original_publication_year', '')
     try:
-        y = int(float(year)) if pd.notna(year) and str(year).strip() else None
-        if y:
+        y = int(float(year)) if pd.notna(year) and str(year).strip() and str(year).strip().lower() != 'nan' else None
+        if y and y > 0:
             parts.append(f'published {y}')
     except (ValueError, TypeError):
         pass
-    rating = row.get('average_rating', '')
     try:
-        r = float(rating) if pd.notna(rating) and str(rating).strip() else None
-        if r:
+        r = float(rating) if pd.notna(rating) and str(rating).strip() and str(rating).strip().lower() != 'nan' else None
+        if r and r > 0:
             parts.append(f'rated {r:.2f}/5')
     except (ValueError, TypeError):
         pass
@@ -118,7 +160,6 @@ def process_goodbooks():
     tags_df = pd.read_csv(dataset_dir / 'tags.csv')
     print(f'  Loaded {len(tags_df)} tags')
 
-    # Map tag IDs to genre names
     tag_to_genre = {}
     for _, row in tags_df.iterrows():
         tag_id = row['tag_id']
@@ -135,7 +176,6 @@ def process_goodbooks():
     bt_df = pd.read_csv(dataset_dir / 'book_tags.csv')
     print(f'  Loaded {len(bt_df)} book-tag associations')
 
-    # Filter book_tags to only valid tags
     bt_filtered = bt_df[bt_df['tag_id'].isin(valid_tag_ids)].copy()
     print(f'  Filtered to {len(bt_filtered)} relevant book-tag associations')
 
@@ -157,8 +197,8 @@ def process_goodbooks():
     gb_df = pd.read_csv(dataset_dir / 'goodbooks.csv')
     print(f'  Loaded {len(gb_df)} books')
 
-    # Filter to English books only (eng, en-US, en-GB, en-CA)
-    eng_codes = ['eng', 'en-US', 'en-GB', 'en-CA', 'en', 'en-us']
+    # Filter to English books
+    eng_codes = ['eng', 'en-US', 'en-GB', 'en-CA', 'en', 'en-us', 'en-ca', 'en-gb']
     gb_df['language_code'] = gb_df['language_code'].fillna('').str.lower().str.strip()
     gb_df = gb_df[gb_df['language_code'].isin(eng_codes) | (gb_df['language_code'] == '')]
     print(f'  After English filter: {len(gb_df)} books')
@@ -177,31 +217,37 @@ def process_goodbooks():
             skipped_no_genre += 1
             continue
 
-        # Exclude if contains ANY excluded genre keyword
+        # Exclude if title contains excluded keywords
         title = str(book.get('title', '')).lower()
-        title_excluded = any(kw in title for kw in ['romance', 'erotica', 'adult fiction', 'nsfw'])
+        title_excluded = any(kw in title for kw in ['romance', 'erotica', 'adult fiction', 'nsfw', 'adult'])
         if title_excluded:
             skipped_excluded += 1
             continue
 
-        isbn_val = str(book.get('isbn', '')).strip()
-        if isbn_val == 'nan' or not isbn_val:
+        isbn_val = safe_str(book.get('isbn', ''))
+        if not isbn_val:
             isbn_val = ''
 
         year_val = book.get('original_publication_year', np.nan)
         try:
-            year_int = int(year_val) if pd.notna(year_val) else 0
+            year_int = int(float(year_val)) if pd.notna(year_val) and float(year_val) == float(year_val) else 0
         except (ValueError, TypeError):
             year_int = 0
 
         # Use original_title or title
-        title_val = str(book.get('original_title', ''))
-        if not title_val or title_val == 'nan':
-            title_val = str(book.get('title', ''))
+        original_title = safe_str(book.get('original_title', ''))
+        title_val = original_title if original_title else safe_str(book.get('title', 'Unknown'))
 
-        author = str(book.get('authors', '')).strip()
-        if not author or author == 'nan':
+        author = safe_str(book.get('authors', 'Unknown'))
+        if not author:
             author = 'Unknown'
+
+        # Filter out purely fiction-only books (no non-fiction allowed genre)
+        fiction_only = genres.issubset(FICTION_GENRES)
+        has_non_fiction_genre = bool(genres - FICTION_GENRES)
+
+        if fiction_only and not has_non_fiction_genre:
+            pass  # Keep but note it's fiction
 
         genre_str = '|'.join(sorted(genres))
 
@@ -211,9 +257,11 @@ def process_goodbooks():
         temp_row = {
             'title': title_val,
             'author': author,
-            'original_title': str(book.get('original_title', '')),
+            'authors': author,
+            'original_title': original_title,
             'average_rating': rating_str,
             'genre': genre_str,
+            'original_publication_year': year_int,
         }
         desc = generate_description(temp_row)
 
@@ -221,9 +269,9 @@ def process_goodbooks():
             'title': title_val,
             'author': author,
             'isbn': isbn_val,
-            'genres': genre_str,
+            'genre': genre_str,
             'description': desc,
-            'year': year_int,
+            'publication_year': year_int,
             'pages': 0,
             'language': 'English',
         })
@@ -248,11 +296,11 @@ def process_goodbooks():
     result_df = pd.concat([result_df_isbn, result_df_no_isbn], ignore_index=True)
     print(f'  After ISBN dedup: {len(result_df)}')
 
-    # Keep only required columns
-    result_df = result_df[['title', 'author', 'isbn', 'genres', 'description', 'year', 'pages', 'language']]
+    # Keep only required columns - use user's specified column names
+    result_df = result_df[['title', 'author', 'isbn', 'genre', 'description', 'publication_year', 'pages', 'language']]
 
-    # Sort by year descending
-    result_df = result_df.sort_values('year', ascending=False).reset_index(drop=True)
+    # Sort by publication_year descending
+    result_df = result_df.sort_values('publication_year', ascending=False).reset_index(drop=True)
 
     print(f'\n{"=" * 70}')
     print(f'FINAL DATASET: {len(result_df)} books')
@@ -274,16 +322,18 @@ def process_goodbooks():
         print(f'XLSX save failed: {e}')
 
     # Statistics
-    print(f'\n📊 Dataset Statistics:')
+    print(f'\nDataset Statistics:')
     print(f'   Total books: {len(result_df)}')
     print(f'   Unique titles: {result_df["title"].nunique()}')
     isbn_count = result_df['isbn'].apply(lambda x: 1 if x and x.strip() else 0).sum()
     print(f'   Books with ISBN: {isbn_count}')
     print(f'   Unique ISBNs: {result_df[result_df["isbn"] != ""]["isbn"].nunique()}')
-    print(f'   Year range: {int(result_df["year"].min())} - {int(result_df["year"].max())}')
+    year_min = result_df['publication_year'].min()
+    year_max = result_df['publication_year'].max()
+    print(f'   Year range: {int(year_min)} - {int(year_max)}')
 
     all_genres = set()
-    for g in result_df['genres'].dropna():
+    for g in result_df['genre'].dropna():
         for gg in str(g).split('|'):
             all_genres.add(gg.strip())
     print(f'   Unique genres: {len(all_genres)}')

@@ -116,10 +116,10 @@ def get_user_detailed_stats(
     total_books = len(library_entries)
     avg_progress = sum(entry.progress for entry in library_entries) / total_books if total_books > 0 else 0
     
-    # Shelf distribution
+    # Status distribution
     shelf_counts = {}
     for entry in library_entries:
-        shelf_counts[entry.shelf] = shelf_counts.get(entry.shelf, 0) + 1
+        shelf_counts[entry.status] = shelf_counts.get(entry.status, 0) + 1
     
     # Rating stats
     ratings = db.query(Rating).filter(Rating.user_id == user_id).all()

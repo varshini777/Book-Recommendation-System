@@ -2,7 +2,9 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../../lib/zustandStore';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Users, ChartBar, BookOpen, Star, Activity, Eye, TrendingUp, LogOut } from 'lucide-react';
+import { ShieldCheck, Users, ChartBar, BookOpen, Star, Activity, Eye, TrendingUp, LogOut, BarChart3, Target, Zap } from 'lucide-react';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function AdminPage() {
   const { user, token, logout } = useAppStore();
@@ -10,6 +12,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userStats, setUserStats] = useState<any>(null);
+  const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'analytics'>('overview');
 
@@ -17,17 +20,17 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
-      // Redirect unauthorized users
       setTimeout(() => router.push('/login'), 2000);
       return;
     }
     loadStats();
     loadUsers();
+    loadMetrics();
   }, [user, token, router]);
 
   const loadStats = async () => {
     try {
-      const response = await fetch('http://localhost:8000/admin/stats', {
+      const response = await fetch(`${API}/admin/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -43,7 +46,7 @@ export default function AdminPage() {
 
   const loadUsers = async () => {
     try {
-      const response = await fetch('http://localhost:8000/admin/users', {
+      const response = await fetch(`${API}/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -55,9 +58,21 @@ export default function AdminPage() {
     }
   };
 
+  const loadMetrics = async () => {
+    try {
+      const response = await fetch(`${API}/recommendations/metrics`);
+      if (response.ok) {
+        const data = await response.json();
+        setMetrics(data);
+      }
+    } catch (error) {
+      console.error('Error loading metrics:', error);
+    }
+  };
+
   const handleSelectUser = async (userId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/admin/users/${userId}/stats`, {
+      const response = await fetch(`${API}/admin/users/${userId}/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -73,7 +88,7 @@ export default function AdminPage() {
   const handleToggleUserStatus = async (userId: number, isActive: boolean) => {
     try {
       const endpoint = isActive ? '/admin/users/{id}/deactivate' : '/admin/users/{id}/activate';
-      const response = await fetch(`http://localhost:8000${endpoint.replace('{id}', userId.toString())}`, {
+      const response = await fetch(`${API}${endpoint.replace('{id}', userId.toString())}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -318,10 +333,10 @@ export default function AdminPage() {
                 </div>
 
                 <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1E1B18', marginBottom: '12px' }}>Shelf Distribution</h3>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1E1B18', marginBottom: '12px' }}>Status Distribution</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {Object.entries(userStats.library_stats.shelf_counts).map(([shelf, count]) => (
-                      <span key={shelf} style={{
+                    {Object.entries(userStats.library_stats.shelf_counts).map(([status, count]) => (
+                      <span key={status} style={{
                         padding: '6px 14px',
                         background: '#6A1B29',
                         color: 'white',
@@ -329,7 +344,7 @@ export default function AdminPage() {
                         fontSize: '0.8rem',
                         fontWeight: 600
                       }}>
-                        {shelf}: {String(count)}
+                        {status.replace(/_/g, ' ')}: {String(count)}
                       </span>
                     ))}
                   </div>
@@ -364,17 +379,80 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'analytics' && (
-        <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
-          <TrendingUp size={48} style={{ color: '#6A1B29', marginBottom: '16px' }} />
-          <h2 style={{ fontSize: '1.4rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: '#6A1B29', marginBottom: '12px' }}>
-            Advanced Analytics
-          </h2>
-          <p style={{ color: '#8A827A', marginBottom: '24px' }}>
-            Detailed analytics dashboard coming soon
-          </p>
-          <p style={{ fontSize: '0.85rem', color: '#8A827A' }}>
-            Features will include: visitor trends, popular pages, top books, and more
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {metrics && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '24px' }}>
+                <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+                  <Target size={32} style={{ color: '#6A1B29', marginBottom: '16px' }} />
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1E1B18', marginBottom: '4px' }}>{metrics.total_users_rated}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#8A827A', fontWeight: 600 }}>Users with Ratings</div>
+                </div>
+                <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+                  <BarChart3 size={32} style={{ color: '#6A1B29', marginBottom: '16px' }} />
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1E1B18', marginBottom: '4px' }}>{metrics.total_ratings}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#8A827A', fontWeight: 600 }}>Total Ratings</div>
+                </div>
+                <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+                  <Star size={32} style={{ color: '#D4AF37', marginBottom: '16px' }} />
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1E1B18', marginBottom: '4px' }}>{metrics.average_rating}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#8A827A', fontWeight: 600 }}>Average Rating</div>
+                </div>
+                <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+                  <Zap size={32} style={{ color: '#6A1B29', marginBottom: '16px' }} />
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1E1B18', marginBottom: '4px' }}>{Object.keys(metrics.algorithms_used).length}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#8A827A', fontWeight: 600 }}>Algorithms Active</div>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: '32px' }}>
+                <h2 style={{ fontSize: '1.4rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: '#6A1B29', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <TrendingUp size={20} /> Model Information
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+                  <div style={{ padding: '16px', background: '#F5EFEB', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#6A1B29', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Algorithm</div>
+                    <div style={{ fontSize: '0.9rem', color: '#1E1B18', fontWeight: 600 }}>{metrics.model_type}</div>
+                  </div>
+                  {metrics.features && metrics.features.map((f: string, i: number) => (
+                    <div key={i} style={{ padding: '16px', background: '#F5EFEB', borderRadius: '12px' }}>
+                      <div style={{ fontSize: '0.9rem', color: '#1E1B18', fontWeight: 600 }}>{f}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: '32px' }}>
+                <h2 style={{ fontSize: '1.4rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: '#6A1B29', marginBottom: '24px' }}>
+                  Recommendation Metrics (Precision@10, NDCG)
+                </h2>
+                <p style={{ color: '#8A827A', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                  The system uses TF-IDF vectorization with cosine similarity for content-based filtering, augmented by collaborative filtering (user-based) and a hybrid weighted ranking algorithm. Metrics are computed using leave-one-out evaluation on rated books.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginTop: '16px' }}>
+                  {[
+                    { label: 'Precision@10', desc: 'Relevant items in top-10' },
+                    { label: 'Recall@10', desc: 'Coverage of all relevant items' },
+                    { label: 'MAP', desc: 'Mean Average Precision' },
+                    { label: 'NDCG@10', desc: 'Normalized Discounted Cumulative Gain' },
+                  ].map(m => (
+                    <div key={m.label} style={{ padding: '14px', background: '#F5EFEB', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#6A1B29' }}>{m.label}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#8A827A', marginTop: 2 }}>{m.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          {!metrics && (
+            <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+              <TrendingUp size={48} style={{ color: '#6A1B29', marginBottom: '16px' }} />
+              <h2 style={{ fontSize: '1.4rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: '#6A1B29', marginBottom: '12px' }}>
+                Loading Analytics...
+              </h2>
+            </div>
+          )}
         </div>
       )}
     </div>

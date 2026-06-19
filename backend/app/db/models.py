@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey, Table, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey, Table, JSON, UniqueConstraint, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -44,6 +44,10 @@ class User(Base):
     activities = relationship("ActivityLog", back_populates="user", cascade="all, delete-orphan")
     followers = relationship("User", secondary=user_followers, primaryjoin=id==user_followers.c.following_id, secondaryjoin=id==user_followers.c.follower_id, backref="following")
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
+    reading_goals = relationship("ReadingGoal", backref="user", cascade="all, delete-orphan")
+    reading_streak = relationship("ReadingStreak", backref="user", uselist=False, cascade="all, delete-orphan")
+    badges = relationship("UserBadge", backref="user", cascade="all, delete-orphan")
+    collections = relationship("BookCollection", backref="user", cascade="all, delete-orphan")
 
 class Genre(Base):
     __tablename__ = 'genres'
@@ -75,7 +79,7 @@ class Book(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(500), nullable=False, index=True)
-    author_id = Column(Integer, ForeignKey('authors.id'), nullable=False)
+    author_id = Column(Integer, ForeignKey('authors.id'), nullable=False, index=True)
     cover_url = Column(String(500))
     language = Column(String(50), default='English', index=True)
     year = Column(Integer, index=True)
@@ -84,7 +88,7 @@ class Book(Base):
     rating = Column(Float, default=0.0)
     rating_count = Column(Integer, default=0)
     description = Column(Text)
-    tags = Column(JSON)  # Array of tags
+    tags = Column(JSON)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -96,13 +100,20 @@ class Book(Base):
     reviews = relationship("Review", back_populates="book", cascade="all, delete-orphan")
     ratings = relationship("Rating", back_populates="book", cascade="all, delete-orphan")
     recommendation_logs = relationship("RecommendationLog", back_populates="book", cascade="all, delete-orphan")
+    
+    __table_args__ = (
+        Index('ix_book_rating_count', 'rating', 'rating_count'),
+        Index('ix_book_active_year', 'is_active', 'year'),
+        Index('ix_book_active_rating', 'is_active', 'rating'),
+        {'extend_existing': True}
+    )
 
 class LibraryEntry(Base):
     __tablename__ = 'library_entries'
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False, index=True)
     status = Column(String(50), default='want_to_read')  # want_to_read, currently_reading, completed
     is_favorite = Column(Boolean, default=False)
     is_bookmarked = Column(Boolean, default=False)
@@ -116,8 +127,10 @@ class LibraryEntry(Base):
     user = relationship("User", back_populates="library_entries")
     book = relationship("Book", back_populates="library_entries")
     
-    # Unique constraint
     __table_args__ = (
+        UniqueConstraint('user_id', 'book_id', name='uq_library_user_book'),
+        Index('ix_library_user_status', 'user_id', 'status'),
+        Index('ix_library_user_favorite', 'user_id', 'is_favorite'),
         {'extend_existing': True}
     )
 
@@ -137,8 +150,8 @@ class Review(Base):
     __tablename__ = 'reviews'
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False, index=True)
     content = Column(Text, nullable=False)
     is_spoiler = Column(Boolean, default=False)
     is_approved = Column(Boolean, default=True)
@@ -153,8 +166,8 @@ class Rating(Base):
     __tablename__ = 'ratings'
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False, index=True)
     rating = Column(Integer, nullable=False)  # 1-5
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -163,8 +176,9 @@ class Rating(Base):
     user = relationship("User", back_populates="ratings")
     book = relationship("Book", back_populates="ratings")
     
-    # Unique constraint
     __table_args__ = (
+        UniqueConstraint('user_id', 'book_id', name='uq_rating_user_book'),
+        Index('ix_rating_book_rating', 'book_id', 'rating'),
         {'extend_existing': True}
     )
 
@@ -222,19 +236,25 @@ class RecommendationLog(Base):
     book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False)
     algorithm = Column(String(50))  # 'content_based', 'collaborative', 'hybrid'
     score = Column(Float)
-    reason = Column(Text)  # Explainable recommendation reason
+    reason = Column(Text)
     clicked = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     book = relationship("Book", back_populates="recommendation_logs")
+    
+    __table_args__ = (
+        Index('ix_reclog_user_algorithm', 'user_id', 'algorithm'),
+        Index('ix_reclog_created', 'created_at'),
+        {'extend_existing': True}
+    )
 
 class Session(Base):
     __tablename__ = 'sessions'
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    token = Column(String(500), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    token = Column(String(500), unique=True, nullable=False, index=True)
     refresh_token = Column(String(500), unique=True)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -285,3 +305,88 @@ class AdminLog(Base):
     details = Column(JSON)
     ip_address = Column(String(50))
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ReadingGoal(Base):
+    __tablename__ = 'reading_goals'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    target_books = Column(Integer, nullable=False)
+    target_year = Column(Integer, nullable=False)
+    current_books = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'target_year', name='uq_reading_goal_user_year'),
+        {'extend_existing': True}
+    )
+
+
+class ReadingStreak(Base):
+    __tablename__ = 'reading_streaks'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    last_reading_date = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', name='uq_reading_streak_user'),
+        {'extend_existing': True}
+    )
+
+
+class Badge(Base):
+    __tablename__ = 'badges'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, nullable=False)
+    description = Column(Text)
+    icon = Column(String(50))
+    criteria = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UserBadge(Base):
+    __tablename__ = 'user_badges'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    badge_id = Column(Integer, ForeignKey('badges.id', ondelete='CASCADE'), nullable=False, index=True)
+    earned_at = Column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'badge_id', name='uq_user_badge'),
+        {'extend_existing': True}
+    )
+
+
+class BookCollection(Base):
+    __tablename__ = 'book_collections'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text)
+    is_public = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class CollectionBook(Base):
+    __tablename__ = 'collection_books'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    collection_id = Column(Integer, ForeignKey('book_collections.id', ondelete='CASCADE'), nullable=False, index=True)
+    book_id = Column(Integer, ForeignKey('books.id', ondelete='CASCADE'), nullable=False, index=True)
+    added_at = Column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        UniqueConstraint('collection_id', 'book_id', name='uq_collection_book'),
+        {'extend_existing': True}
+    )

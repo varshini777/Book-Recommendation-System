@@ -11,6 +11,7 @@ interface User {
   role: string;
   is_active: boolean;
   is_verified: boolean;
+  onboarded: boolean;
   created_at: string;
 }
 
@@ -49,6 +50,12 @@ interface UserPreferences {
   onboarding_completed: boolean;
 }
 
+interface ReadingGoal {
+  target_books: number;
+  current_books: number;
+  target_year: number;
+}
+
 interface AppState {
   user: User | null;
   token: string | null;
@@ -57,6 +64,7 @@ interface AppState {
   onboarded: boolean;
   darkMode: boolean;
   toasts: Array<{ id: string; message: string; type: 'success' | 'error' | 'info' }>;
+  readingGoal: ReadingGoal | null;
 
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
@@ -74,6 +82,8 @@ interface AppState {
   setPreferences: (preferences: UserPreferences) => void;
   setOnboarded: (onboarded: boolean) => void;
   loadPreferences: () => Promise<void>;
+  loadReadingGoal: () => Promise<void>;
+  updateReadingGoal: (targetBooks: number) => Promise<boolean>;
 
   toggleDark: () => void;
   addToast: (message: string, type: 'success' | 'error' | 'info') => void;
@@ -90,6 +100,7 @@ export const useAppStore = create<AppState>()(
       onboarded: false,
       darkMode: false,
       toasts: [],
+      readingGoal: null,
 
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
@@ -120,6 +131,7 @@ export const useAppStore = create<AppState>()(
 
             get().loadLibrary();
             get().loadPreferences();
+            get().loadReadingGoal();
             return true;
           }
           return false;
@@ -149,7 +161,8 @@ export const useAppStore = create<AppState>()(
           token: null,
           library: [],
           preferences: null,
-          onboarded: false
+          onboarded: false,
+          readingGoal: null
         });
       },
 
@@ -264,6 +277,48 @@ export const useAppStore = create<AppState>()(
           }
         } catch (e) {
           console.error('Load preferences error:', e);
+        }
+      },
+
+      loadReadingGoal: async () => {
+        const { token } = get();
+        if (!token) return;
+        try {
+          const res = await fetch(`${API_BASE}/users/me/reading-goal`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const goal = await res.json();
+            set({ readingGoal: goal });
+          }
+        } catch (e) {
+          console.error('Load reading goal error:', e);
+        }
+      },
+
+      updateReadingGoal: async (targetBooks) => {
+        const { token } = get();
+        if (!token) return false;
+        try {
+          const res = await fetch(`${API_BASE}/users/me/reading-goal`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ target_books: targetBooks })
+          });
+          if (res.ok) {
+            const goal = await res.json();
+            set({ readingGoal: goal });
+            get().addToast('Reading goal updated successfully! 📚', 'success');
+            return true;
+          }
+          return false;
+        } catch (e) {
+          console.error('Update reading goal error:', e);
+          get().addToast('Failed to update reading goal', 'error');
+          return false;
         }
       },
 

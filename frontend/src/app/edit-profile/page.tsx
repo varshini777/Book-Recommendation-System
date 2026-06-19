@@ -7,7 +7,7 @@ import Link from 'next/link';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function EditProfile() {
-  const { user, setUser } = useAppStore();
+  const { user, setUser, addToast } = useAppStore();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [avatar, setAvatar] = useState(user?.avatar || '👤');
@@ -29,13 +29,13 @@ export default function EditProfile() {
       if (response.ok) {
         const updatedUser = await response.json();
         setUser(updatedUser);
-        alert('Profile updated successfully!');
+        addToast('Profile updated successfully!', 'success');
       } else {
-        alert('Error updating profile');
+        addToast('Error updating profile', 'error');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error updating profile');
+      addToast('Error updating profile', 'error');
     } finally {
       setLoading(false);
     }

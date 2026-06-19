@@ -4,20 +4,20 @@ import { useAppStore } from '../../lib/zustandStore';
 import { Bell, Shield, Palette, Globe, Trash2, Save, Cog } from 'lucide-react';
 
 export default function Settings() {
-  const { user, darkMode, toggleDark, logout } = useAppStore();
+  const { user, darkMode, toggleDark, logout, addToast } = useAppStore();
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [language, setLanguage] = useState('en');
 
   const handleSave = () => {
     // Save settings to backend
-    alert('Settings saved successfully!');
+    addToast('Settings saved successfully!', 'success');
   };
 
   const handleDeleteAccount = () => {
     if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
       // Delete account logic
-      alert('Account deletion requested');
+      addToast('Account deletion requested', 'info');
     }
   };
 

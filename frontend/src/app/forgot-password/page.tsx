@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useAppStore } from '../../lib/zustandStore';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function ForgotPassword() {
+  const { addToast } = useAppStore();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,12 +25,13 @@ export default function ForgotPassword() {
       
       if (response.ok) {
         setSubmitted(true);
+        addToast('Password reset link sent to your email!', 'success');
       } else {
-        alert('Error sending reset email');
+        addToast('Error sending reset email', 'error');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error sending reset email');
+      addToast('Error sending reset email', 'error');
     } finally {
       setLoading(false);
     }

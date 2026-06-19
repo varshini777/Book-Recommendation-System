@@ -25,8 +25,15 @@ def _book_to_dict(book: Book, explanation: str = None, score: float = None):
         "description": book.description[:200] + "..." if book.description and len(book.description) > 200 else book.description,
         "isbn": book.isbn,
     }
-    if explanation is not None:
-        data["explanation"] = explanation
+    if explanation is None:
+        genres_list = [g.name for g in book.genres] if book.genres else []
+        if book.rating and book.rating >= 4.3:
+            explanation = "Highly rated choice loved by readers"
+        elif genres_list:
+            explanation = f"Popular choice in {genres_list[0]}"
+        else:
+            explanation = "Trending choice among readers this week"
+    data["explanation"] = explanation
     if score is not None:
         data["score"] = round(score, 4)
     return data
@@ -95,7 +102,7 @@ def get_cold_start(
     books = recommendation_service.get_cold_start_recommendations(limit)
     return {
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation="Trending choice among readers this week") for b in books]
     }
 
 
@@ -110,7 +117,7 @@ def get_similar_books(
     return {
         "book_id": book_id,
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation="Readers who enjoyed this also liked") for b in books]
     }
 
 
@@ -125,7 +132,7 @@ def get_also_enjoyed(
     return {
         "book_id": book_id,
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation="Readers who enjoyed this also liked") for b in books]
     }
 
 
@@ -140,7 +147,7 @@ def get_same_genre(
     return {
         "book_id": book_id,
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation="Matches your selected genres") for b in books]
     }
 
 
@@ -155,7 +162,7 @@ def get_similar_author(
     return {
         "author_id": author_id,
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation=f"Based on your interest in {b.author.name}" if b.author else "Based on your interest in this author") for b in books]
     }
 
 
@@ -168,7 +175,7 @@ def get_trending_books(
     books = recommendation_service.get_trending(limit)
     return {
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation="Trending choice among readers this week") for b in books]
     }
 
 
@@ -181,7 +188,7 @@ def get_new_releases(
     books = recommendation_service.get_new_releases(limit)
     return {
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation="New release choice for you") for b in books]
     }
 
 
@@ -194,7 +201,7 @@ def get_top_rated(
     books = recommendation_service.get_top_rated(limit)
     return {
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation=f"Highly rated ({b.rating:.1f}/5) by readers") for b in books]
     }
 
 
@@ -207,7 +214,7 @@ def get_hidden_gems(
     books = recommendation_service.get_hidden_gems(limit)
     return {
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation="Hidden gem loved by readers") for b in books]
     }
 
 
@@ -222,7 +229,7 @@ def get_by_genre(
     return {
         "genre": genre,
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation=f"Popular in {genre}") for b in books]
     }
 
 
@@ -237,7 +244,7 @@ def get_by_author(
     return {
         "author_id": author_id,
         "count": len(books),
-        "books": [_book_to_dict(b) for b in books]
+        "books": [_book_to_dict(b, explanation=f"Popular book by {b.author.name}" if b.author else "Popular book by this author") for b in books]
     }
 
 

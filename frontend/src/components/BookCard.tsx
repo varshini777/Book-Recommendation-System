@@ -26,7 +26,7 @@ interface BookCardProps {
 
 const PLACEHOLDER_GRADIENT = 'linear-gradient(135deg, #6A1B29 0%, #4A101A 50%, #2D0A12 100%)';
 
-function CoverPlaceholder({ title, author }: { title: string; author: string }) {
+function CoverPlaceholder({ title, author, genre }: { title: string; author: string; genre?: string }) {
   return (
     <div style={{
       position: 'absolute', top: 0, left: 0,
@@ -46,16 +46,33 @@ function CoverPlaceholder({ title, author }: { title: string; author: string }) 
         textAlign: 'center',
         lineHeight: 1.3,
         fontWeight: 700,
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
       }}>
         {title}
       </span>
       <span style={{
-        fontSize: '0.75rem',
-        color: 'rgba(255,255,255,0.6)',
+        fontSize: '0.8rem',
+        color: 'rgba(255,255,255,0.7)',
         textAlign: 'center',
       }}>
         {author}
       </span>
+      {genre && (
+        <span style={{
+          fontSize: '0.68rem',
+          color: '#D4AF37',
+          border: '1px solid rgba(212, 175, 55, 0.4)',
+          padding: '2px 8px',
+          borderRadius: '10px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+        }}>
+          {genre}
+        </span>
+      )}
     </div>
   );
 }
@@ -103,7 +120,7 @@ export default function BookCard({ book, showScore, showExplanation }: BookCardP
               onError={() => setImgFailed(true)}
             />
           ) : (
-            <CoverPlaceholder title={book.title} author={author} />
+            <CoverPlaceholder title={book.title} author={author} genre={genres[0]} />
           )}
 
           {rating > 0 && (
@@ -199,6 +216,11 @@ export default function BookCard({ book, showScore, showExplanation }: BookCardP
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Star size={13} className="star" fill="#D4AF37" color="#D4AF37" />
               <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>{rating.toFixed(1)}</span>
+              {book.rating_count !== undefined && book.rating_count > 0 && (
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                  ({book.rating_count.toLocaleString()})
+                </span>
+              )}
             </div>
 
             {year && (

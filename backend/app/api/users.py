@@ -25,6 +25,10 @@ class OnboardingSubmit(BaseModel):
     reading_goal: int
     selected_books: List[int]
 
+class ReadingGoalUpdate(BaseModel):
+    target_books: int
+
+
 @router.get("/me")
 def get_current_user_profile(
     user_id: int = Depends(get_current_user_id),
@@ -228,6 +232,78 @@ def submit_onboarding(
             detail=str(e)
         )
 
+
+@router.get("/me/reading-goal")
+def get_reading_goal(
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    from app.db.models import ReadingGoal, LibraryEntry
+    from datetime import datetime
+    current_year = datetime.utcnow().year
+    
+    current_books_count = db.query(LibraryEntry).filter(
+        LibraryEntry.user_id == user_id,
+        LibraryEntry.status == 'completed'
+    ).count()
+    
+    goal = db.query(ReadingGoal).filter(
+        ReadingGoal.user_id == user_id,
+        ReadingGoal.target_year == current_year
+    ).first()
+    
+    if not goal:
+        return {"target_books": 10, "current_books": current_books_count, "target_year": current_year}
+    
+    if goal.current_books != current_books_count:
+        goal.current_books = current_books_count
+        db.commit()
+        
+    return {
+        "target_books": goal.target_books,
+        "current_books": current_books_count,
+        "target_year": goal.target_year
+    }
+
+@router.put("/me/reading-goal")
+def update_reading_goal(
+    goal_data: ReadingGoalUpdate,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    from app.db.models import ReadingGoal, LibraryEntry
+    from datetime import datetime
+    current_year = datetime.utcnow().year
+    
+    current_books_count = db.query(LibraryEntry).filter(
+        LibraryEntry.user_id == user_id,
+        LibraryEntry.status == 'completed'
+    ).count()
+    
+    goal = db.query(ReadingGoal).filter(
+        ReadingGoal.user_id == user_id,
+        ReadingGoal.target_year == current_year
+    ).first()
+    
+    if goal:
+        goal.target_books = goal_data.target_books
+        goal.current_books = current_books_count
+        goal.updated_at = datetime.utcnow()
+    else:
+        goal = ReadingGoal(
+            user_id=user_id,
+            target_books=goal_data.target_books,
+            target_year=current_year,
+            current_books=current_books_count
+        )
+        db.add(goal)
+    
+    db.commit()
+    return {
+        "target_books": goal.target_books,
+        "current_books": goal.current_books,
+        "target_year": goal.target_year
+    }
 
 @router.get("/me/stats")
 def get_current_user_stats(

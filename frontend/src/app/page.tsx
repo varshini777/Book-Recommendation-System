@@ -106,7 +106,7 @@ export default function Home() {
         </div>
       ) : books.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px' }}>
-          {books.map((b: any) => <BookCard key={b.id} book={b} />)}
+          {books.map((b: any) => <BookCard key={b.id} book={b} showExplanation={true} />)}
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-muted)', background: 'var(--card-bg)', borderRadius: '20px', border: '1px solid var(--border)' }}>

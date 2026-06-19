@@ -251,8 +251,26 @@ def process_goodbooks():
 
         genre_str = '|'.join(sorted(genres))
 
-        rating = book.get('average_rating', 0)
-        rating_str = f'{rating:.2f}' if pd.notna(rating) else '0.00'
+        rating = book.get('average_rating', 0.0)
+        try:
+            rating_val = float(rating) if pd.notna(rating) else 0.0
+        except (ValueError, TypeError):
+            rating_val = 0.0
+
+        ratings_count = book.get('ratings_count', 0)
+        try:
+            ratings_count_val = int(float(ratings_count)) if pd.notna(ratings_count) else 0
+        except (ValueError, TypeError):
+            ratings_count_val = 0
+
+        cover_url_val = book.get('image_url', '')
+        if pd.isna(cover_url_val) or not str(cover_url_val).strip():
+            cover_url_val = book.get('small_image_url', '')
+        if pd.isna(cover_url_val):
+            cover_url_val = ''
+        cover_url_val = str(cover_url_val).strip()
+
+        rating_str = f'{rating_val:.2f}'
 
         temp_row = {
             'title': title_val,
@@ -274,6 +292,9 @@ def process_goodbooks():
             'publication_year': year_int,
             'pages': 0,
             'language': 'English',
+            'rating': rating_val,
+            'rating_count': ratings_count_val,
+            'cover_url': cover_url_val,
         })
 
     print(f'  Books with matching genres: {len(rows)}')
@@ -297,7 +318,7 @@ def process_goodbooks():
     print(f'  After ISBN dedup: {len(result_df)}')
 
     # Keep only required columns - use user's specified column names
-    result_df = result_df[['title', 'author', 'isbn', 'genre', 'description', 'publication_year', 'pages', 'language']]
+    result_df = result_df[['title', 'author', 'isbn', 'genre', 'description', 'publication_year', 'pages', 'language', 'rating', 'rating_count', 'cover_url']]
 
     # Sort by publication_year descending
     result_df = result_df.sort_values('publication_year', ascending=False).reset_index(drop=True)

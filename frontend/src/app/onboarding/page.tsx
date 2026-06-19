@@ -63,6 +63,31 @@ interface AuthorSuggestion {
   name: string;
 }
 
+function OnboardingBookCover({ coverUrl, title, genres }: { coverUrl: string; title: string; genres: string[] }) {
+  const [failed, setFailed] = useState(false);
+  const showImg = coverUrl && !failed;
+
+  if (showImg) {
+    return (
+      <img 
+        src={coverUrl} 
+        alt={title}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full p-3 flex flex-col items-center justify-center text-center bg-gradient-to-br from-indigo-950 to-slate-950 border border-indigo-900/30 rounded-lg">
+      <span className="font-serif text-[10px] text-amber-400 font-bold line-clamp-3 leading-tight mb-1">{title}</span>
+      {genres && genres[0] && (
+        <span className="text-[8px] text-indigo-400/80 border border-indigo-900/40 px-1.5 py-0.5 rounded-full uppercase tracking-wider scale-90">{genres[0]}</span>
+      )}
+    </div>
+  );
+}
+
 export default function Onboarding() {
   const { user, token, setPreferences, setOnboarded, addToast, refreshUser } = useAppStore();
   const router = useRouter();
@@ -245,6 +270,15 @@ export default function Onboarding() {
       addToast('Please select at least 3 genres to proceed.', 'info');
       return;
     }
+    if (step === 3) {
+      const finalReadingGoal = goalType === 'Custom' 
+        ? Number(customGoal) 
+        : (GOAL_OPTIONS.find(g => g.label === goalType)?.value || 0);
+      if (!finalReadingGoal || finalReadingGoal <= 0) {
+        addToast('Please select a valid reading goal to proceed.', 'info');
+        return;
+      }
+    }
     if (step === 4 && selectedInterests.length < 1) {
       addToast('Please select at least 1 reading interest to proceed.', 'info');
       return;
@@ -262,16 +296,31 @@ export default function Onboarding() {
 
   const progress = ((step + 1) / STEPS.length) * 100;
 
+  // Automatic redirect to dashboard after 3.5s on completion step
+  useEffect(() => {
+    if (step === 7) {
+      const timer = setTimeout(() => {
+        router.replace('/');
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [step, router]);
+
   // Custom styling elements to force glassmorphism & deep spotify/netflix styling
   const gradientBg = {
-    background: 'radial-gradient(circle at top left, #0e172a, #020617, #1a0f2e)',
-    minHeight: 'calc(100vh - 72px)',
+    background: 'radial-gradient(circle at top left, #0e172a, #020617, #1e1b4b)',
+    position: 'fixed' as const,
+    top: 0, left: 0, right: 0, bottom: 0,
+    zIndex: 999,
+    overflowY: 'auto' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
   };
 
   return (
-    <div style={gradientBg} className="text-white flex flex-col items-center justify-start py-8 px-4 sm:px-6 overflow-x-hidden">
-      {/* Container Card */}
-      <div className="w-full max-w-4xl bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 sm:p-10 shadow-2xl flex flex-col min-height-container">
+    <div style={gradientBg} className="text-white w-full h-full min-h-screen py-8 px-4 sm:py-12 sm:px-8 md:px-12 flex flex-col justify-between items-center">
+      {/* Container Layout - Max Width 7xl */}
+      <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col justify-between">
         
         {/* Animated Progress Bar */}
         {step < 6 && (
@@ -372,7 +421,7 @@ export default function Onboarding() {
                 </div>
 
                 {/* Spotify-style Genre Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-[360px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                   {GENRES.map((g, idx) => {
                     const isSelected = selectedGenres.includes(g);
                     // generate unique color hue based on index for Spotify style cards
@@ -622,8 +671,7 @@ export default function Onboarding() {
                   <p className="text-slate-300 text-xs sm:text-sm mt-2">Select at least <span className="text-rose-500 font-bold">1 interest</span>. This matches Netflix-style personalization grids.</p>
                 </div>
 
-                {/* Netflix-style Interest Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                   {INTERESTS.map(item => {
                     const isSelected = selectedInterests.includes(item.id);
                     return (
@@ -673,7 +721,7 @@ export default function Onboarding() {
 
                 {booksLoading ? (
                   /* Loading Skeletons */
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 max-h-[350px] overflow-hidden pr-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 max-h-[50vh] overflow-hidden pr-2">
                     {Array.from({ length: 10 }).map((_, idx) => (
                       <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-3 h-64 animate-pulse">
                         <div className="bg-white/10 w-full h-40 rounded-lg" />
@@ -683,7 +731,7 @@ export default function Onboarding() {
                     ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                     {sampleBooks.map(book => {
                       const isSelected = selectedBooks.includes(book.id);
                       return (
@@ -702,24 +750,7 @@ export default function Onboarding() {
                         >
                           {/* Image cover fallback placeholder check */}
                           <div className="relative w-full h-40 rounded-lg overflow-hidden bg-slate-900 border border-slate-800/80 mb-2 shadow-inner flex items-center justify-center">
-                            {book.cover_url ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img 
-                                src={book.cover_url} 
-                                alt={book.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                onError={(e) => {
-                                  // fallback image cover if fails to load
-                                  (e.target as HTMLImageElement).src = '/images/placeholder_cover.jpg';
-                                  (e.target as HTMLImageElement).style.objectFit = 'contain';
-                                }}
-                              />
-                            ) : (
-                              <div className="text-center text-slate-600 p-2">
-                                <BookOpen size={24} className="mx-auto mb-1 text-slate-700" />
-                                <span className="text-[10px] uppercase font-bold tracking-wider">No Cover</span>
-                              </div>
-                            )}
+                            <OnboardingBookCover coverUrl={book.cover_url} title={book.title} genres={book.genres} />
                             
                             {/* Selection checkmark badge */}
                             {isSelected && (

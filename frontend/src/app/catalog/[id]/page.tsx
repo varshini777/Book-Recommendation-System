@@ -169,7 +169,21 @@ export default function BookDetail({ params }: { params: Promise<{ id: string }>
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, padding: 24,
               }}>
                 <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.4rem', color: '#D4AF37', textAlign: 'center', fontWeight: 700 }}>{book.title}</span>
-                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{author}</span>
+                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>{author}</span>
+                {genres[0] && (
+                  <span style={{
+                    fontSize: '0.72rem',
+                    color: '#D4AF37',
+                    border: '1px solid rgba(212, 175, 55, 0.4)',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginTop: '8px'
+                  }}>
+                    {genres[0]}
+                  </span>
+                )}
               </div>
             )}
           </div>

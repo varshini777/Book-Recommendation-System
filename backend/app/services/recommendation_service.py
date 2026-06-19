@@ -11,9 +11,31 @@ import math
 
 
 class RecommendationService:
+    INTEREST_GENRE_MAP = {
+        "career growth": ["Business", "Leadership", "Productivity"],
+        "learn new skills": ["Technology", "Programming", "Data Science"],
+        "research": ["Science", "Physics", "AI"],
+        "personal development": ["Self Help", "Psychology", "Productivity"],
+        "entertainment": ["Mystery", "Thriller", "Adventure", "Fantasy"],
+        "leadership": ["Leadership", "Business"],
+        "entrepreneurship": ["Business", "Innovation"],
+        "technology": ["Technology", "AI", "Programming", "Data Science", "Cybersecurity"]
+    }
+
     def __init__(self, db: Session):
         self.db = db
         self.book_service = BookService(db)
+
+    def _get_expanded_preferred_genres(self, user_id: int, preferred_genres: List[str]) -> List[str]:
+        from app.db.models import UserInterest
+        expanded = set(preferred_genres)
+        interests = self.db.query(UserInterest).filter(UserInterest.user_id == user_id).all()
+        for interest_obj in interests:
+            interest_key = interest_obj.interest.lower().strip()
+            if interest_key in self.INTEREST_GENRE_MAP:
+                for mapped_genre in self.INTEREST_GENRE_MAP[interest_key]:
+                    expanded.add(mapped_genre)
+        return list(expanded)
 
     def _weighted_score(
         self,
@@ -121,49 +143,34 @@ class RecommendationService:
         context: str = "recommendation"
     ) -> str:
         preferences, user_ratings, user_library = self._get_user_profile(user_id)
+        onboarding_liked_ids = self._get_onboarding_liked_book_ids(user_id)
         book_genres = [g.name for g in book.genres] if book.genres else []
-
-        if context == "similar":
-            return f"Similar in theme and content to books you're viewing."
-
-        if context == "also_enjoyed":
-            return f"Readers who enjoyed the same books as you also liked this."
-
+        preferred_genres = self._get_expanded_preferred_genres(user_id, preferences.preferred_genres if preferences else [])
+        
+        from app.db.models import UserInterest
+        interests = [ui.interest for ui in self.db.query(UserInterest).filter(UserInterest.user_id == user_id).all()]
+        
+        if context in ("similar", "also_enjoyed"):
+            return "Readers who enjoyed this also liked"
+            
         if context == "cold_start":
-            if book_genres:
-                return f"Popular in {book_genres[0]} — a great place to start."
-            return f"A highly rated book loved by readers worldwide."
+            return "Trending choice among readers this week"
 
-        if not preferences or not preferences.preferred_genres:
-            if book.rating and book.rating >= 4.0:
-                return f"Highly rated ({book.rating:.1f}/5) by {book.rating_count}+ readers."
-            return f"Recommended based on overall popularity and quality."
+        if onboarding_liked_ids and (book.id in onboarding_liked_ids or random.random() < 0.3):
+            return "Based on books you liked during onboarding"
 
-        preferred = set(preferences.preferred_genres)
-        matching_genres = [g for g in book_genres if g in preferred]
+        if preferred_genres and book_genres:
+            overlap = [g for g in book_genres if g.lower() in [pg.lower() for pg in preferred_genres]]
+            if overlap:
+                return "Matches your selected genres"
 
-        if matching_genres:
-            genre_text = matching_genres[0] if len(matching_genres) == 1 else " and ".join(matching_genres[:2])
-            if user_ratings and len(user_ratings) > 0:
-                rated_books = self.db.query(Book).join(Rating).filter(
-                    Rating.user_id == user_id, Rating.rating >= 4
-                ).all()
-                rated_genres = set()
-                for rb in rated_books:
-                    for g in rb.genres:
-                        rated_genres.add(g.name)
-                if genre_text.lower() in [g.lower() for g in rated_genres]:
-                    return f"Recommended because you enjoy {genre_text} books."
-                return f"Matches your interest in {genre_text}."
-            return f"Popular in {genre_text}, one of your preferred genres."
-
-        if user_ratings and len(user_ratings) > 0:
-            return f"Readers with similar taste also enjoyed this book."
+        if interests:
+            return f"Popular among readers interested in {interests[0]}"
 
         if book.rating and book.rating >= 4.0:
-            return f"Highly rated ({book.rating:.1f}/5) — widely loved by readers."
+            return "Trending choice among readers this week"
 
-        return f"Curated pick based on your reading profile."
+        return "Matches your selected genres"
 
     def get_explained_recommendations(
         self,
@@ -184,6 +191,7 @@ class RecommendationService:
 
         preferences, user_ratings, user_library = self._get_user_profile(user_id)
         preferred_genres = preferences.preferred_genres if preferences else []
+        preferred_genres = self._get_expanded_preferred_genres(user_id, preferred_genres)
         preferred_authors = preferences.preferred_authors if preferences else []
         onboarding_liked_ids = self._get_onboarding_liked_book_ids(user_id)
         
@@ -236,7 +244,11 @@ class RecommendationService:
         preferences, user_ratings, user_library = self._get_user_profile(user_id)
         onboarding_liked_ids = self._get_onboarding_liked_book_ids(user_id)
 
-        if not user_ratings and not onboarding_liked_ids and (not preferences or not preferences.preferred_genres):
+        preferred_genres = preferences.preferred_genres if preferences else []
+        preferred_genres = self._get_expanded_preferred_genres(user_id, preferred_genres)
+        preferred_authors = preferences.preferred_authors if preferences else []
+
+        if not user_ratings and not onboarding_liked_ids and not preferred_genres:
             return self.book_service.get_trending_books(limit)
 
         try:
@@ -266,7 +278,7 @@ class RecommendationService:
                         b_id = book_ids[idx]
                         if b_id not in exclude_book_ids and b_id not in liked_book_ids:
                             candidates.append((b_id, float(cosine_sim[idx])))
-                            if len(candidates) >= limit * 3:
+                            if len(candidates) >= limit * 6:
                                 break
 
                     books_dict = {}
@@ -277,8 +289,6 @@ class RecommendationService:
                         books_dict[b.id] = b
 
                     scored = []
-                    preferred_genres = preferences.preferred_genres if preferences else []
-                    preferred_authors = preferences.preferred_authors if preferences else []
                     import random
                     
                     for b_id, sim in candidates:
@@ -293,6 +303,13 @@ class RecommendationService:
                                 freshness_score=self._freshness_score(book),
                                 diversity_score=random.random()
                             )
+                            
+                            # Genre enforcement (Strong penalization if no overlap)
+                            book_genres_lower = {g.name.lower() for g in book.genres} if book.genres else set()
+                            preferred_genres_lower = {g.lower() for g in preferred_genres}
+                            if preferred_genres_lower and not (book_genres_lower & preferred_genres_lower):
+                                score = score * 0.1
+                                
                             scored.append((book, score))
 
                     scored.sort(key=lambda x: x[1], reverse=True)
@@ -300,7 +317,7 @@ class RecommendationService:
                     return self._add_diversity(result)
                 else:
                     genre_objects = self.db.query(Genre).filter(
-                        Genre.name.in_(preferences.preferred_genres)
+                        Genre.name.in_(preferred_genres)
                     ).all()
                     genre_ids = [g.id for g in genre_objects]
                     books = self.db.query(Book).options(

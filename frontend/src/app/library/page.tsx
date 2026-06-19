@@ -5,6 +5,37 @@ import { useState, useEffect } from 'react';
 import { Layers, Bookmark, BookOpen, CheckCircle2, Plus, Minus, Trash2, Settings2, Star } from 'lucide-react';
 import { isValidCoverUrl } from '@/lib/utils';
 
+function LibraryBookCover({ coverUrl, title }: { coverUrl: string; title: string }) {
+  const [failed, setFailed] = useState(false);
+  const showImg = isValidCoverUrl(coverUrl) && !failed;
+
+  if (showImg) {
+    return (
+      <img
+        src={coverUrl}
+        alt={title}
+        className="book-cover"
+        style={{ width: '100%', height: '130px', borderRadius: '10px', objectFit: 'cover', background: 'var(--surface)' }}
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div style={{
+      width: '100%', height: '130px', borderRadius: '10px',
+      background: 'linear-gradient(135deg, #6A1B29, #4A101A)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '8px',
+    }}>
+      <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '0.75rem', color: '#D4AF37', textAlign: 'center', fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {title}
+      </span>
+    </div>
+  );
+}
+
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface LibraryEntryData {
@@ -29,7 +60,7 @@ interface LibraryEntryData {
 }
 
 export default function Library() {
-  const { user, token, library, loadLibrary, removeFromLibrary, addToast } = useAppStore();
+  const { user, token, library, loadLibrary, removeFromLibrary, updateLibraryEntry, addToast } = useAppStore();
   const [activeStatus, setActiveStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<LibraryEntryData[]>([]);
@@ -68,7 +99,7 @@ export default function Library() {
     ? entries
     : entries.filter(e => e.status === activeStatus);
 
-  const handleStatusChange = async (entryId: number, newStatus: string) => {
+  const handleStatusChange = async (entryId: number, bookId: number, newStatus: string) => {
     try {
       const res = await fetch(`${API}/libraries/${entryId}`, {
         method: 'PUT',
@@ -79,6 +110,7 @@ export default function Library() {
         setEntries(prev => prev.map(e =>
           e.id === entryId ? { ...e, status: newStatus } : e
         ));
+        updateLibraryEntry(bookId, { status: newStatus });
         addToast('Status updated!', 'success');
       }
     } catch (e) {
@@ -86,7 +118,7 @@ export default function Library() {
     }
   };
 
-  const handleProgressChange = async (entryId: number, progress: number) => {
+  const handleProgressChange = async (entryId: number, bookId: number, progress: number) => {
     try {
       const res = await fetch(`${API}/libraries/${entryId}`, {
         method: 'PUT',
@@ -97,9 +129,11 @@ export default function Library() {
         setEntries(prev => prev.map(e =>
           e.id === entryId ? { ...e, progress } : e
         ));
+        updateLibraryEntry(bookId, { progress });
+        addToast(`Progress updated to ${progress}%!`, 'success');
       }
     } catch (e) {
-      console.error('Error updating progress:', e);
+      addToast('Failed to update progress', 'error');
     }
   };
 
@@ -187,37 +221,7 @@ export default function Library() {
           {filteredEntries.map(entry => (
             <div key={entry.id} className="card" style={{ padding: '20px', display: 'flex', gap: '16px' }}>
               <Link href={`/catalog/${entry.book_id}`} style={{ display: 'block', width: '90px', flexShrink: 0 }}>
-                {isValidCoverUrl(entry.book?.cover_url) ? (
-                  <img
-                    src={entry.book.cover_url}
-                    alt={entry.book?.title || 'Book'}
-                    className="book-cover"
-                    style={{ width: '100%', height: '130px', borderRadius: '10px', objectFit: 'cover', background: 'var(--surface)' }}
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const parent = target.parentElement;
-                      if (parent) {
-                        const fallback = document.createElement('div');
-                        fallback.style.cssText = 'width:100%;height:130px;border-radius:10px;background:linear-gradient(135deg,#6A1B29,#4A101A);display:flex;align-items:center;justify-content:center;padding:8px;';
-                        fallback.innerHTML = `<span style="font-family:Playfair Display,serif;font-size:0.75rem;color:#D4AF37;text-align:center">${entry.book?.title || 'Book'}</span>`;
-                        parent.appendChild(fallback);
-                      }
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%', height: '130px', borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #6A1B29, #4A101A)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '8px',
-                  }}>
-                    <span style={{ fontFamily: 'Playfair Display, serif', fontSize: '0.75rem', color: '#D4AF37', textAlign: 'center' }}>
-                      {entry.book?.title || 'Book'}
-                    </span>
-                  </div>
-                )}
+                <LibraryBookCover coverUrl={entry.book?.cover_url || ''} title={entry.book?.title || 'Book'} />
               </Link>
 
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '6px', minWidth: 0 }}>
@@ -251,11 +255,11 @@ export default function Library() {
                     <div className="progress-fill" style={{ width: `${entry.progress}%` }} />
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <button onClick={() => handleProgressChange(entry.id, Math.max(0, entry.progress - 10))}
+                    <button onClick={() => handleProgressChange(entry.id, entry.book_id, Math.max(0, entry.progress - 10))}
                       className="btn-secondary" style={{ padding: '3px 8px', fontSize: '0.68rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '2px', height: 'auto' }}>
                       <Minus size={9} /> 10%
                     </button>
-                    <button onClick={() => handleProgressChange(entry.id, Math.min(100, entry.progress + 10))}
+                    <button onClick={() => handleProgressChange(entry.id, entry.book_id, Math.min(100, entry.progress + 10))}
                       className="btn-secondary" style={{ padding: '3px 8px', fontSize: '0.68rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '2px', height: 'auto' }}>
                       <Plus size={9} /> 10%
                     </button>
@@ -271,7 +275,7 @@ export default function Library() {
                 <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <select
                     value={entry.status}
-                    onChange={e => handleStatusChange(entry.id, e.target.value)}
+                    onChange={e => handleStatusChange(entry.id, entry.book_id, e.target.value)}
                     style={{
                       fontSize: '0.72rem', padding: '4px 8px', borderRadius: '8px',
                       background: 'var(--surface)', border: '1px solid var(--border)',

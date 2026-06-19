@@ -6,14 +6,28 @@ import { User, BookOpen, Star, Award, Flame, Target, TrendingUp, Library, LogOut
 import Link from 'next/link';
 
 export default function Profile() {
-  const { user, library, logout, addToast } = useAppStore();
+  const { user, library, logout, addToast, readingGoal, loadReadingGoal, updateReadingGoal } = useAppStore();
   const router = useRouter();
   const [streak, setStreak] = useState(0);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState('12');
 
   useEffect(() => {
     if (!user) router.replace('/login');
     calculateStreak();
   }, [user, library]);
+
+  useEffect(() => {
+    if (user) {
+      loadReadingGoal();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (readingGoal) {
+      setGoalInput(readingGoal.target_books.toString());
+    }
+  }, [readingGoal]);
 
   const calculateStreak = () => {
     if (library.length === 0) return;
@@ -32,7 +46,9 @@ export default function Profile() {
   const totalProgress = library.reduce((a, e) => a + e.progress, 0);
   const avgProgress = totalBooks > 0 ? Math.round(totalProgress / totalBooks) : 0;
   const pagesRead = library.reduce((a, e) => a + (e.book?.pages || 300) * (e.progress / 100), 0);
-  const goalProgress = completed > 0 ? Math.min(100, (completed / 12) * 100) : 0;
+  
+  const targetBooksCount = readingGoal?.target_books || 12;
+  const goalProgress = completed > 0 ? Math.min(100, (completed / targetBooksCount) * 100) : 0;
 
   const StatCard = ({ icon: Icon, label, value, sub, color }: any) => (
     <div style={{ background: '#F5EFEB', padding: '20px 16px', borderRadius: 16, border: '1px solid #E8E2D9', textAlign: 'center' }}>
@@ -84,16 +100,81 @@ export default function Profile() {
         {/* Goal */}
         <div className="card" style={{ padding: 32 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0, color: '#0E172A' }}>
-              <Target size={18} style={{ color: '#D4AF37', marginRight: 8 }} /> 2026 Reading Goal
+            <h3 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, margin: 0, color: '#0E172A', display: 'flex', alignItems: 'center' }}>
+              <Target size={18} style={{ color: '#D4AF37', marginRight: 8 }} /> {new Date().getFullYear()} Reading Goal
             </h3>
-            <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#6A1B29' }}>{completed} / 12</span>
+            
+            {isEditingGoal ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min="1"
+                  value={goalInput}
+                  onChange={e => setGoalInput(e.target.value)}
+                  style={{
+                    width: '60px',
+                    padding: '4px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    color: 'var(--text-primary)',
+                    fontWeight: 700,
+                    outline: 'none',
+                    textAlign: 'center'
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    const parsed = parseInt(goalInput);
+                    if (isNaN(parsed) || parsed <= 0) {
+                      addToast('Please enter a valid positive number for your goal', 'error');
+                      return;
+                    }
+                    const success = await updateReadingGoal(parsed);
+                    if (success) {
+                      setIsEditingGoal(false);
+                    }
+                  }}
+                  className="btn-primary"
+                  style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '8px' }}
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditingGoal(false);
+                    setGoalInput(targetBooksCount.toString());
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '6px 12px', fontSize: '0.75rem', borderRadius: '8px' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--burgundy)' }}>
+                  {completed} / {targetBooksCount}
+                </span>
+                <button
+                  onClick={() => setIsEditingGoal(true)}
+                  className="btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: '0.72rem', borderRadius: '8px' }}
+                >
+                  Edit Goal
+                </button>
+              </div>
+            )}
           </div>
+          
           <div className="progress-bar" style={{ height: 12, marginBottom: 8 }}>
             <div className="progress-fill" style={{ width: `${goalProgress}%` }} />
           </div>
+          
           <p style={{ margin: 0, fontSize: '0.82rem', color: '#8A827A', fontWeight: 500 }}>
-            {goalProgress >= 100 ? 'Goal completed! Amazing!' : `${12 - completed} more books to reach your goal`}
+            {goalProgress >= 100 
+              ? 'Goal completed! Amazing! 🎉' 
+              : `${Math.max(0, targetBooksCount - completed)} more books to reach your goal`}
           </p>
         </div>
 

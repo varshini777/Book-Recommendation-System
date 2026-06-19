@@ -122,13 +122,6 @@ def import_books(df, db):
                 skipped += 1
                 continue
 
-            # Check for duplicate by ISBN (if ISBN exists)
-            if isbn:
-                existing = db.query(Book).filter(Book.isbn == isbn).first()
-                if existing:
-                    duplicates += 1
-                    continue
-
             # Validate and filter genres
             valid_genres = validate_genres(genres_str)
             if not valid_genres:
@@ -146,19 +139,58 @@ def import_books(df, db):
             else:
                 author = author_cache[author_name]
 
+            # Check if book already exists
+            existing = None
+            if isbn:
+                existing = db.query(Book).filter(Book.isbn == isbn).first()
+            if not existing:
+                existing = db.query(Book).filter(Book.title == title, Book.author_id == author.id).first()
+
+            # Parse rating, rating_count, and cover_url from row
+            rating = float(row.get('rating', 0.0)) if pd.notna(row.get('rating')) else 0.0
+            rating_count = int(float(row.get('rating_count', 0))) if pd.notna(row.get('rating_count')) else 0
+            cover_url = str(row.get('cover_url', '')).strip()
+            if not cover_url or cover_url.lower() == 'nan':
+                cover_url = PLACEHOLDER_COVER_URL
+
+            if existing:
+                # Update existing book
+                existing.rating = rating
+                existing.rating_count = rating_count
+                if cover_url and cover_url != PLACEHOLDER_COVER_URL:
+                    existing.cover_url = cover_url
+                db.add(existing)
+                duplicates += 1
+
+                # Sync genres for existing book
+                existing_genres = {g.name for g in existing.genres}
+                for genre_name in valid_genres:
+                    if genre_name not in existing_genres:
+                        if genre_name not in genre_cache:
+                            genre = db.query(Genre).filter(Genre.name == genre_name).first()
+                            if not genre:
+                                genre = Genre(name=genre_name, description=f"Books in {genre_name}")
+                                db.add(genre)
+                                db.flush()
+                            genre_cache[genre_name] = genre
+                        else:
+                            genre = genre_cache[genre_name]
+                        existing.genres.append(genre)
+                continue
+
             # Create Book with verified field names
             book = Book(
                 title=title,
                 author_id=author.id,
                 isbn=isbn if isbn else None,
-                cover_url=PLACEHOLDER_COVER_URL,
+                cover_url=cover_url,
                 language=language,
                 year=year,
                 pages=pages,
                 description=description,
                 tags=None,
-                rating=0.0,
-                rating_count=0,
+                rating=rating,
+                rating_count=rating_count,
                 is_active=True,
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow()
@@ -209,7 +241,7 @@ def import_books(df, db):
     print(f"   Duplicates skipped: {duplicates}")
     print(f"   Invalid rows: {skipped}")
 
-    return imported
+    return imported + duplicates
 
 
 def train_tfidf_model(db):
@@ -390,6 +422,15 @@ def main():
     # Create session
     db = SessionLocal()
 
+    # Pre-import count
+    pre_books = db.query(Book).count()
+    pre_authors = db.query(Author).count()
+    pre_genres = db.query(Genre).count()
+    print(f"\n[VALIDATE] Pre-Import Database Counts:")
+    print(f"   Books: {pre_books}")
+    print(f"   Authors: {pre_authors}")
+    print(f"   Genres: {pre_genres}")
+
     try:
         # Import books
         imported = import_books(df, db)
@@ -397,9 +438,52 @@ def main():
             print("\n[WARN] No books were imported")
             return False
 
-        # Train TF-IDF model
-        if not train_tfidf_model(db):
-            print("\n[WARN] TF-IDF model training failed (continuing anyway)")
+        # Post-import count
+        post_books = db.query(Book).count()
+        post_authors = db.query(Author).count()
+        post_genres = db.query(Genre).count()
+        print(f"\n[VALIDATE] Post-Import Database Counts:")
+        print(f"   Books: {post_books}")
+        print(f"   Authors: {post_authors}")
+        print(f"   Genres: {post_genres}")
+
+        # Check expected minimums
+        if post_books < 9007 or post_authors < 4262 or post_genres < 24:
+            print("\n" + "!" * 70)
+            print("[CRITICAL ERROR] POST-IMPORT COUNTS BELOW EXPECTED MINIMUMS!")
+            print(f"Expected Minimum: Books >= 9007, Authors >= 4262, Genres >= 24")
+            print(f"Actual Counts:    Books: {post_books}, Authors: {post_authors}, Genres: {post_genres}")
+            print("!" * 70)
+            db.rollback()
+            return False
+
+        # Check for decrease
+        if post_books < pre_books or post_authors < pre_authors or post_genres < pre_genres:
+            print("\n" + "!" * 70)
+            print("[CRITICAL ERROR] POST-IMPORT COUNTS DECREASED!")
+            print(f"Pre-Import:  Books: {pre_books}, Authors: {pre_authors}, Genres: {pre_genres}")
+            print(f"Post-Import: Books: {post_books}, Authors: {post_authors}, Genres: {post_genres}")
+            print("!" * 70)
+            db.rollback()
+            return False
+
+        # Train TF-IDF model (Skip retraining if book counts match the model safety rule)
+        import pickle
+        retrain_needed = True
+        model_path = Path(__file__).parent.parent / "models" / "recommender.pkl"
+        if model_path.exists():
+            try:
+                with open(model_path, 'rb') as f:
+                    model_data = pickle.load(f)
+                if model_data.get('book_count') == post_books:
+                    print("\n[TRAIN] Skipping TF-IDF retraining (no new books or description changes detected, matches Safety Rule).")
+                    retrain_needed = False
+            except Exception as e:
+                print(f"[TRAIN] Error reading recommender.pkl, will retrain: {e}")
+
+        if retrain_needed:
+            if not train_tfidf_model(db):
+                print("\n[WARN] TF-IDF model training failed (continuing anyway)")
 
         # Verify import
         if not verify_import(db):

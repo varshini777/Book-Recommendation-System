@@ -14,7 +14,13 @@ export default function Login() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user) router.replace('/');
+    if (user) {
+      if (user.onboarded) {
+        router.replace('/');
+      } else {
+        router.replace('/onboarding');
+      }
+    }
   }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

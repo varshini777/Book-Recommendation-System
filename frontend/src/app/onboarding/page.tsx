@@ -277,14 +277,14 @@ export default function Onboarding() {
         {step < 6 && (
           <div className="mb-8">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              <span className="text-xs font-semibold tracking-wider text-slate-300 uppercase">
                 Onboarding Step {step + 1} of {STEPS.length - 2}
               </span>
-              <span className="text-xs font-bold text-amber-500">{Math.round(progress)}% Completed</span>
+              <span className="text-xs font-bold text-amber-400">{Math.round(progress)}% Completed</span>
             </div>
-            <div className="w-full bg-slate-950/60 rounded-full h-2 overflow-hidden border border-slate-800/40">
+            <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/10">
               <motion.div 
-                className="bg-gradient-to-r from-rose-900 via-purple-700 to-amber-500 h-full rounded-full"
+                className="bg-gradient-to-r from-rose-500 via-purple-500 to-amber-400 h-full rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -304,7 +304,7 @@ export default function Onboarding() {
                     ? 'bg-rose-900/80 text-white border border-rose-500 shadow-md shadow-rose-900/20' 
                     : idx < step 
                       ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/50' 
-                      : 'bg-slate-950/60 text-slate-500 border border-slate-900'
+                      : 'bg-slate-950/60 text-slate-400 border border-slate-900'
                 }`}
               >
                 {idx < step ? '✓ ' : ''}{label}
@@ -333,7 +333,7 @@ export default function Onboarding() {
                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-rose-400 bg-clip-text text-transparent">
                   Welcome to LitRealm
                 </h1>
-                <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
                   Embark on a highly personalized reading adventure. Customize your tastes, set reading targets, and get intelligent book recommendations tailored uniquely to you.
                 </p>
 
@@ -341,17 +341,17 @@ export default function Onboarding() {
                   <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/50 backdrop-blur-sm hover:border-rose-900/30 transition-all duration-300">
                     <Compass className="text-rose-500 mx-auto mb-3" size={28} />
                     <h3 className="font-bold text-sm text-slate-200">Smart Discovery</h3>
-                    <p className="text-xs text-slate-500 mt-1">Weighted recommendation formulas mapping your preferred genres, authors, and interests.</p>
+                    <p className="text-xs text-slate-400 mt-1">Weighted recommendation formulas mapping your preferred genres, authors, and interests.</p>
                   </div>
                   <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/50 backdrop-blur-sm hover:border-purple-900/30 transition-all duration-300">
                     <Target className="text-purple-500 mx-auto mb-3" size={28} />
                     <h3 className="font-bold text-sm text-slate-200">Set Reading Goals</h3>
-                    <p className="text-xs text-slate-500 mt-1">Select a reading goal for the year and track your progress page-by-page.</p>
+                    <p className="text-xs text-slate-400 mt-1">Select a reading goal for the year and track your progress page-by-page.</p>
                   </div>
                   <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/50 backdrop-blur-sm hover:border-amber-900/30 transition-all duration-300">
                     <Library className="text-amber-500 mx-auto mb-3" size={28} />
                     <h3 className="font-bold text-sm text-slate-200">Personalized Library</h3>
-                    <p className="text-xs text-slate-500 mt-1">Organize favorites, want to read, currently reading, and completed books seamlessly.</p>
+                    <p className="text-xs text-slate-400 mt-1">Organize favorites, want to read, currently reading, and completed books seamlessly.</p>
                   </div>
                 </div>
               </motion.div>
@@ -368,7 +368,7 @@ export default function Onboarding() {
               >
                 <div className="text-center">
                   <h2 className="text-2xl sm:text-3xl font-black text-rose-400">Choose Your Favorite Genres</h2>
-                  <p className="text-slate-400 text-xs sm:text-sm mt-2">Select at least <span className="text-rose-500 font-bold">3 genres</span> to customize your recommendations feed.</p>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Select at least <span className="text-rose-500 font-bold">3 genres</span> to customize your recommendations feed.</p>
                 </div>
 
                 {/* Spotify-style Genre Cards */}
@@ -417,7 +417,7 @@ export default function Onboarding() {
                     );
                   })}
                 </div>
-                <div className="text-center text-xs text-slate-500">
+                <div className="text-center text-xs text-slate-400">
                   Selected: <span className="text-white font-bold">{selectedGenres.length}</span> / 3 minimum
                 </div>
               </motion.div>
@@ -434,7 +434,7 @@ export default function Onboarding() {
               >
                 <div className="text-center">
                   <h2 className="text-2xl sm:text-3xl font-black text-purple-400">Select Favorite Authors</h2>
-                  <p className="text-slate-400 text-xs sm:text-sm mt-2">Find and select authors you enjoy. Recommendations will prioritize their works.</p>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Find and select authors you enjoy. Recommendations will prioritize their works.</p>
                 </div>
 
                 {/* Author Search bar */}
@@ -447,7 +447,7 @@ export default function Onboarding() {
                     value={authorQuery}
                     onChange={e => setAuthorQuery(e.target.value)}
                     placeholder="Search by author name..."
-                    className="w-full bg-slate-950/70 border border-slate-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-slate-500 transition-all outline-none"
+                    className="w-full bg-white/5 border border-white/10 focus:border-purple-500/80 focus:bg-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-slate-400 transition-all outline-none backdrop-blur-md"
                   />
                   {authorSearchLoading && (
                     <div className="absolute right-3 top-3.5">
@@ -457,7 +457,7 @@ export default function Onboarding() {
                   
                   {/* Search Suggestions Dropdown */}
                   {authorSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto">
+                    <div className="absolute left-0 right-0 mt-1 bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-20 max-h-48 overflow-y-auto">
                       {authorSuggestions.map(author => (
                         <button
                           key={author.id}
@@ -501,7 +501,7 @@ export default function Onboarding() {
 
                 {/* Suggested/Popular Authors list */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Suggested Authors</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Suggested Authors</h4>
                   <div className="flex flex-wrap gap-2 justify-center max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                     {popularAuthors.slice(0, 15).map(author => {
                       const isSelected = selectedAuthors.includes(author.name);
@@ -518,7 +518,7 @@ export default function Onboarding() {
                           className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300 flex items-center gap-1.5 ${
                             isSelected
                               ? 'bg-purple-900 border-purple-500 text-white'
-                              : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white'
+                              : 'bg-slate-950/40 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
                           }`}
                         >
                           {isSelected && <UserCheck size={12} />}
@@ -542,7 +542,7 @@ export default function Onboarding() {
               >
                 <div className="text-center">
                   <h2 className="text-2xl sm:text-3xl font-black text-amber-400">Set Your Reading Goal</h2>
-                  <p className="text-slate-400 text-xs sm:text-sm mt-2">How many books do you plan to read this year? Establish your target.</p>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-2">How many books do you plan to read this year? Establish your target.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 max-w-3xl mx-auto">
@@ -554,8 +554,8 @@ export default function Onboarding() {
                       onClick={() => setGoalType(g.label)}
                       className={`p-5 rounded-2xl border text-center transition-all duration-300 flex flex-col justify-between h-40 ${
                         goalType === g.label
-                          ? 'bg-amber-950/40 border-amber-500 shadow-lg shadow-amber-950/20 text-white'
-                          : 'bg-slate-950/30 border-slate-800 text-slate-400 hover:border-slate-700'
+                          ? 'bg-amber-500/20 border-amber-500/80 shadow-lg shadow-amber-950/40 text-white'
+                          : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
                       }`}
                     >
                       <div className="mx-auto bg-amber-500/10 p-2 rounded-xl text-amber-500 mb-2">
@@ -565,18 +565,18 @@ export default function Onboarding() {
                       {g.label === 'Custom' ? (
                         <div className="flex flex-col items-center">
                           <span className="text-2xl font-black text-amber-500">{customGoal}</span>
-                          <span className="text-[10px] text-slate-500 uppercase mt-1">BOOKS</span>
+                          <span className="text-[10px] text-slate-400 uppercase mt-1">BOOKS</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center">
                           <span className="text-3xl font-black text-amber-500">{g.value}</span>
-                          <span className="text-[10px] text-slate-500 uppercase mt-1">BOOKS</span>
+                          <span className="text-[10px] text-slate-400 uppercase mt-1">BOOKS</span>
                         </div>
                       )}
                       
                       <div>
                         <h3 className="font-bold text-xs text-slate-200 mt-2">{g.label}</h3>
-                        <p className="text-[9px] text-slate-500 mt-1">{g.desc}</p>
+                        <p className="text-[9px] text-slate-400 mt-1">{g.desc}</p>
                       </div>
                     </motion.button>
                   ))}
@@ -587,7 +587,7 @@ export default function Onboarding() {
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="max-w-md mx-auto bg-slate-950/40 border border-slate-800 p-6 rounded-2xl text-center space-y-4"
+                    className="max-w-md mx-auto bg-white/5 border border-white/10 p-6 rounded-2xl text-center space-y-4 backdrop-blur-md"
                   >
                     <label className="text-xs font-bold text-slate-300 block">Drag to adjust goal: {customGoal} books per year</label>
                     <input
@@ -598,7 +598,7 @@ export default function Onboarding() {
                       onChange={e => setCustomGoal(parseInt(e.target.value))}
                       className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
                     />
-                    <div className="flex justify-between text-[10px] text-slate-500 px-1">
+                    <div className="flex justify-between text-[10px] text-slate-400 px-1">
                       <span>1 Book</span>
                       <span>100 Books</span>
                       <span>200 Books</span>
@@ -619,7 +619,7 @@ export default function Onboarding() {
               >
                 <div className="text-center">
                   <h2 className="text-2xl sm:text-3xl font-black text-rose-400">What are your reading interests?</h2>
-                  <p className="text-slate-400 text-xs sm:text-sm mt-2">Select at least <span className="text-rose-500 font-bold">1 interest</span>. This matches Netflix-style personalization grids.</p>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Select at least <span className="text-rose-500 font-bold">1 interest</span>. This matches Netflix-style personalization grids.</p>
                 </div>
 
                 {/* Netflix-style Interest Cards */}
@@ -636,8 +636,8 @@ export default function Onboarding() {
                         )}
                         className={`p-4 rounded-2xl border text-left flex items-start gap-4 transition-all duration-300 ${
                           isSelected
-                            ? 'bg-rose-950/30 border-rose-500 shadow-md shadow-rose-950/20 text-white'
-                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-rose-500/20 border-rose-500/80 shadow-md shadow-rose-950/40 text-white'
+                            : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
                         }`}
                       >
                         <div className="text-3xl bg-slate-900 p-2.5 rounded-xl border border-slate-800/80 shadow-md">
@@ -648,7 +648,7 @@ export default function Onboarding() {
                             <span>{item.id}</span>
                             {isSelected && <CheckCircle2 size={16} className="text-rose-500" />}
                           </h3>
-                          <p className="text-xs text-slate-500 leading-normal">{item.desc}</p>
+                          <p className="text-xs text-slate-400 leading-normal">{item.desc}</p>
                         </div>
                       </motion.button>
                     );
@@ -668,17 +668,17 @@ export default function Onboarding() {
               >
                 <div className="text-center">
                   <h2 className="text-2xl sm:text-3xl font-black text-rose-400">Select books you like</h2>
-                  <p className="text-slate-400 text-xs sm:text-sm mt-2">Pick at least <span className="text-rose-500 font-bold">5 books</span>. We prioritize these as content-similarity seeds.</p>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Pick at least <span className="text-rose-500 font-bold">5 books</span>. We prioritize these as content-similarity seeds.</p>
                 </div>
 
                 {booksLoading ? (
                   /* Loading Skeletons */
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 max-h-[350px] overflow-hidden pr-2">
                     {Array.from({ length: 10 }).map((_, idx) => (
-                      <div key={idx} className="bg-slate-900/40 border border-slate-800/60 rounded-xl p-3 space-y-3 h-64 animate-pulse">
-                        <div className="bg-slate-950 w-full h-40 rounded-lg" />
-                        <div className="bg-slate-950 w-3/4 h-3.5 rounded" />
-                        <div className="bg-slate-950 w-1/2 h-2.5 rounded" />
+                      <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-3 h-64 animate-pulse">
+                        <div className="bg-white/10 w-full h-40 rounded-lg" />
+                        <div className="bg-white/10 w-3/4 h-3.5 rounded" />
+                        <div className="bg-white/10 w-1/2 h-2.5 rounded" />
                       </div>
                     ))}
                   </div>
@@ -696,8 +696,8 @@ export default function Onboarding() {
                           )}
                           className={`p-3 rounded-xl border text-left relative transition-all duration-300 h-68 flex flex-col justify-between overflow-hidden group ${
                             isSelected
-                              ? 'bg-rose-950/20 border-rose-500 shadow-md shadow-rose-950/20'
-                              : 'bg-slate-950/30 border-slate-800 hover:border-slate-700'
+                              ? 'bg-rose-500/10 border-rose-500 shadow-lg shadow-rose-950/30'
+                              : 'bg-white/5 border border-white/10 hover:border-white/20'
                           }`}
                         >
                           {/* Image cover fallback placeholder check */}
@@ -735,7 +735,7 @@ export default function Onboarding() {
                             <div className="line-clamp-2 font-bold text-xs text-slate-100 group-hover:text-rose-400 transition-all leading-tight">
                               {book.title}
                             </div>
-                            <div className="text-[10px] text-slate-500 truncate">
+                            <div className="text-[10px] text-slate-400 truncate">
                               {book.author_name}
                             </div>
                             {book.rating > 0 && (
@@ -751,7 +751,7 @@ export default function Onboarding() {
                   </div>
                 )}
                 
-                <div className="text-center text-xs text-slate-500">
+                <div className="text-center text-xs text-slate-400">
                   Selected: <span className="text-white font-bold">{selectedBooks.length}</span> / 5 minimum
                 </div>
               </motion.div>
@@ -767,7 +767,7 @@ export default function Onboarding() {
               >
                 <div className="relative w-24 h-24 mx-auto">
                   {/* Glowing Spinner */}
-                  <div className="absolute inset-0 border-4 border-slate-800 rounded-full" />
+                  <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
                   <motion.div 
                     className="absolute inset-0 border-4 border-t-rose-500 border-r-purple-500 border-b-transparent border-l-transparent rounded-full"
                     animate={{ rotate: 360 }}
@@ -780,11 +780,11 @@ export default function Onboarding() {
 
                 <div className="space-y-3">
                   <h3 className="text-xl font-bold tracking-tight text-slate-200">Generating recommendation profile...</h3>
-                  <p className="text-slate-500 text-xs">Calibrating cold-start filters and populating relational interest indices.</p>
+                  <p className="text-slate-400 text-xs">Calibrating cold-start filters and populating relational interest indices.</p>
                 </div>
 
                 {/* Profiler loading logs */}
-                <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 text-left font-mono text-xs text-slate-400 space-y-2.5 max-h-48 overflow-y-auto">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-left font-mono text-xs text-slate-300 space-y-2.5 max-h-48 overflow-y-auto backdrop-blur-md">
                   {profileTicks.map((tick, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-emerald-400 animate-fadeIn font-semibold">
                       <span>⚡</span>
@@ -806,23 +806,22 @@ export default function Onboarding() {
                 <div className="inline-flex p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-full text-emerald-400 shadow-xl shadow-emerald-950/30 animate-bounce">
                   <CheckCircle2 size={64} className="stroke-[2.5]" />
                 </div>
-                
                 <h1 className="text-3xl font-black text-emerald-400">Profile Calibrated!</h1>
-                <p className="text-slate-400 text-sm">
+                <p className="text-slate-300 text-sm">
                   We have mapped your preferences. Your personalized LitRealm dashboard is calibrated and ready.
                 </p>
 
                 {/* Profile Strength Card */}
-                <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-6 grid grid-cols-2 gap-4">
-                  <div className="border-r border-slate-800/80 p-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Profile Strength</span>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 grid grid-cols-2 gap-4 backdrop-blur-md">
+                  <div className="border-r border-white/10 p-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Profile Strength</span>
                     <span className="text-3xl font-black text-amber-500 mt-1 block">95%</span>
-                    <span className="text-[9px] text-slate-600 block mt-1">Excellent seed mapping</span>
+                    <span className="text-[9px] text-slate-400 block mt-1">Excellent seed mapping</span>
                   </div>
                   <div className="p-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Recommender State</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Recommender State</span>
                     <span className="text-2xl font-black text-emerald-400 mt-1.5 block">READY</span>
-                    <span className="text-[9px] text-slate-600 block mt-1.5">Hybrid formula online</span>
+                    <span className="text-[9px] text-slate-400 block mt-1.5">Hybrid formula online</span>
                   </div>
                 </div>
 
@@ -844,14 +843,14 @@ export default function Onboarding() {
 
         {/* Action Buttons */}
         {step < 6 && (
-          <div className="flex gap-4 justify-between mt-10 pt-6 border-t border-slate-800/40">
+          <div className="flex gap-4 justify-between mt-10 pt-6 border-t border-white/10">
             <button
               onClick={handleBack}
               disabled={step === 0}
               className={`px-6 py-3 rounded-xl border text-sm font-semibold flex items-center gap-2 cursor-pointer transition-all ${
                 step === 0 
-                  ? 'border-slate-800/40 text-slate-700 cursor-not-allowed' 
-                  : 'bg-slate-950/30 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white'
+                  ? 'border-white/5 text-slate-600 cursor-not-allowed' 
+                  : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 hover:text-white'
               }`}
             >
               <ArrowLeft size={14} /> Back
@@ -859,7 +858,7 @@ export default function Onboarding() {
 
             <button
               onClick={handleNext}
-              className="px-8 py-3 bg-rose-900 hover:bg-rose-800 text-white font-bold text-sm rounded-xl border border-rose-800/30 flex items-center gap-2 cursor-pointer transition-all shadow-md shadow-rose-950/20"
+              className="px-8 py-3 bg-gradient-to-r from-rose-700 to-rose-900 hover:from-rose-600 hover:to-rose-800 text-white font-bold text-sm rounded-xl border border-rose-600/30 flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-rose-950/30"
             >
               Next <ChevronRight size={14} />
             </button>

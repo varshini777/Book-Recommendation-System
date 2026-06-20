@@ -5,7 +5,7 @@ from app.db import get_db
 from app.db.models import Book, Author, Genre, LibraryEntry, Rating, UserPreference, SearchLog
 from app.services.recommendation_service import RecommendationService
 from app.services.book_service import BookService
-from app.core.security import get_current_user_id
+from app.core.security import get_current_user_id, get_current_admin_id
 
 router = APIRouter()
 
@@ -252,6 +252,7 @@ def get_by_author(
 def get_recommendation_metrics(
     user_id: Optional[int] = None,
     k: int = 10,
+    admin_id: int = Depends(get_current_admin_id),
     db: Session = Depends(get_db)
 ):
     recommendation_service = RecommendationService(db)
@@ -279,6 +280,7 @@ def popular_searches(
 
 @router.get("/analytics")
 def get_analytics(
+    admin_id: int = Depends(get_current_admin_id),
     db: Session = Depends(get_db)
 ):
     recommendation_service = RecommendationService(db)

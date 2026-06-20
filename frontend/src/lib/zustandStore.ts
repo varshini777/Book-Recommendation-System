@@ -127,6 +127,8 @@ export const useAppStore = create<AppState>()(
             if (userResponse.ok) {
               const userData = await userResponse.json();
               set({ user: userData });
+              // Write role to cookie so Next.js middleware can read it server-side
+              document.cookie = `litrealm_role=${userData.role}; path=/; SameSite=Lax; max-age=86400`;
             }
 
             get().loadLibrary();
@@ -156,6 +158,8 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: () => {
+        // Clear the role cookie on logout
+        document.cookie = 'litrealm_role=; path=/; max-age=0';
         set({
           user: null,
           token: null,

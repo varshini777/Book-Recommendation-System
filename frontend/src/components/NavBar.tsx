@@ -18,14 +18,22 @@ export default function NavBar() {
     }
   }, [darkMode]);
 
+  const isAdmin = user?.role === 'admin';
+
+  // Base links visible to all authenticated users (and unauthenticated)
   const links = [
     { href: '/', label: 'Home', icon: <Home size={16} /> },
     { href: '/catalog', label: 'Catalog', icon: <BookOpen size={16} /> },
     { href: '/library', label: 'Library', count: library.length, icon: <Library size={16} /> },
-    { href: '/analytics', label: 'Analytics', icon: <BarChart3 size={16} /> },
-    { href: '/demo', label: 'Demo', icon: <Cpu size={16} /> },
     { href: '/profile', label: 'Profile', icon: <User size={16} /> },
   ];
+
+  // Admin-only links — completely excluded from DOM for non-admin users
+  const adminLinks = isAdmin ? [
+    { href: '/analytics', label: 'Analytics', icon: <BarChart3 size={16} /> },
+    { href: '/demo', label: 'Demo', icon: <Cpu size={16} /> },
+    { href: '/admin', label: 'Admin', icon: <Settings size={16} /> },
+  ] : [];
 
   return (
     <nav style={{
@@ -79,12 +87,12 @@ export default function NavBar() {
             </Link>
           );
         })}
-        {user && user.role === 'admin' && (
-          <Link href="/admin" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}>
-            <Settings size={16} />
-            <span>Admin</span>
+        {adminLinks.map(l => (
+          <Link key={l.href} href={l.href} className={`nav-link ${pathname === l.href ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}>
+            {l.icon}
+            <span>{l.label}</span>
           </Link>
-        )}
+        ))}
       </div>
 
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -167,12 +175,12 @@ export default function NavBar() {
               )}
             </Link>
           ))}
-          {user && user.role === 'admin' && (
-            <Link href="/admin" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px' }}>
-              <Settings size={16} />
-              <span style={{ flex: 1 }}>Admin</span>
+          {adminLinks.map(l => (
+            <Link key={l.href} href={l.href} className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px' }}>
+              {l.icon}
+              <span style={{ flex: 1 }}>{l.label}</span>
             </Link>
-          )}
+          ))}
           {user && (
             <button onClick={() => { logout(); setMenuOpen(false); }} className="nav-link" style={{
               display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px',

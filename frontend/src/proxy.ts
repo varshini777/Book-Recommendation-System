@@ -7,12 +7,12 @@ import type { NextRequest } from 'next/server';
  * Protected routes: /admin/*, /analytics/*, /demo/*
  *
  * Strategy:
- * - Reads the `litrealm_role` cookie which is set by zustandStore on login.
- * - If the cookie is missing or not "admin", redirect to /access-denied.
+ * - Reads the `litrealm_auth` cookie which is set by zustandStore on login.
+ * - If the cookie is missing, redirect to /access-denied.
  *
- * Note: The `litrealm_role` cookie is written client-side on login and cleared
- * on logout. This gives us server-side enforcement without requiring SSR token
- * verification. The backend itself also enforces 403 for all admin API endpoints.
+ * Note: The `litrealm_auth` cookie only indicates authentication state.
+ * The actual role validation is securely handled by `AdminGuard` on the client
+ * and enforced strictly by the backend API 403s.
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -23,9 +23,9 @@ export function proxy(request: NextRequest) {
     pathname.startsWith('/demo');
 
   if (isAdminRoute) {
-    const role = request.cookies.get('litrealm_role')?.value;
+    const isAuth = request.cookies.get('litrealm_auth')?.value;
 
-    if (role !== 'admin') {
+    if (!isAuth) {
       const url = request.nextUrl.clone();
       url.pathname = '/access-denied';
       return NextResponse.redirect(url);

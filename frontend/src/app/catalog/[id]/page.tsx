@@ -3,7 +3,7 @@ import { useAppStore } from '@/lib/zustandStore';
 import BookCard from '@/components/BookCard';
 import Link from 'next/link';
 import { useState, use, useEffect } from 'react';
-import { ArrowLeft, Star, Calendar, FileText, Bookmark, BookOpen, CheckCircle2, Settings, X, AlertTriangle, Info, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Star, Calendar, FileText, Bookmark, BookOpen, CheckCircle2, Settings, X, AlertTriangle, Info, BarChart3, Layers } from 'lucide-react';
 import { isValidCoverUrl } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

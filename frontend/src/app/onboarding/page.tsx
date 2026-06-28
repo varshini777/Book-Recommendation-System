@@ -3,10 +3,13 @@ import { useAppStore } from '@/lib/zustandStore';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, BookOpen, User, Check, ChevronRight, 
-  Star, ArrowLeft, Award, Search, Target, Compass, 
-  TrendingUp, Library, ShieldCheck, Heart, UserCheck, CheckCircle2 
+import {
+  Sparkles, BookOpen, User, Check, ChevronRight,
+  Star, ArrowLeft, Award, Search, Target, Compass,
+  TrendingUp, Library, ShieldCheck, Heart, UserCheck, CheckCircle2,
+  X, Plus, Rocket, BookMarked,
+  Quote, GraduationCap, Lightbulb, Briefcase, Sprout,
+  FlaskConical, Crown, Code2, Microscope
 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -23,12 +26,38 @@ const STEPS = [
 ];
 
 const GENRES = [
-  'Technology', 'AI', 'Programming', 'Data Science', 'Cybersecurity', 
-  'Business', 'Finance', 'Psychology', 'Productivity', 'Biography', 
-  'History', 'Philosophy', 'Science', 'Physics', 'Space', 
-  'Mystery', 'Thriller', 'Adventure', 'Fantasy', 'Education', 
+  'Technology', 'AI', 'Programming', 'Data Science', 'Cybersecurity',
+  'Business', 'Finance', 'Psychology', 'Productivity', 'Biography',
+  'History', 'Philosophy', 'Science', 'Physics', 'Space',
+  'Mystery', 'Thriller', 'Adventure', 'Fantasy', 'Education',
   'Self Help', 'Leadership', 'Innovation'
 ];
+
+const GENRE_ICON_MAP: Record<string, React.ReactNode> = {
+  'Technology': <Code2 size={22} />,
+  'AI': <Sparkles size={22} />,
+  'Programming': <Code2 size={22} />,
+  'Data Science': <FlaskConical size={22} />,
+  'Cybersecurity': <ShieldCheck size={22} />,
+  'Business': <Briefcase size={22} />,
+  'Finance': <TrendingUp size={22} />,
+  'Psychology': <User size={22} />,
+  'Productivity': <Target size={22} />,
+  'Biography': <User size={22} />,
+  'History': <BookOpen size={22} />,
+  'Philosophy': <Quote size={22} />,
+  'Science': <Microscope size={22} />,
+  'Physics': <FlaskConical size={22} />,
+  'Space': <Rocket size={22} />,
+  'Mystery': <Search size={22} />,
+  'Thriller': <Compass size={22} />,
+  'Adventure': <Compass size={22} />,
+  'Fantasy': <Sparkles size={22} />,
+  'Education': <GraduationCap size={22} />,
+  'Self Help': <Lightbulb size={22} />,
+  'Leadership': <Crown size={22} />,
+  'Innovation': <Sparkles size={22} />
+};
 
 const INTERESTS = [
   { id: 'Learn New Skills', icon: '💡', desc: 'Acquire practical knowledge & programming skills' },
@@ -61,6 +90,9 @@ interface BookSample {
 interface AuthorSuggestion {
   id: number;
   name: string;
+  image_url?: string | null;
+  nationality?: string | null;
+  popularity?: number;
 }
 
 function OnboardingBookCover({ coverUrl, title, genres }: { coverUrl: string; title: string; genres: string[] }) {
@@ -69,21 +101,57 @@ function OnboardingBookCover({ coverUrl, title, genres }: { coverUrl: string; ti
 
   if (showImg) {
     return (
-      <img 
-        src={coverUrl} 
+      <img
+        src={coverUrl}
         alt={title}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         onError={() => setFailed(true)}
       />
     );
   }
 
   return (
-    <div className="w-full h-full p-3 flex flex-col items-center justify-center text-center bg-gradient-to-br from-indigo-950 to-slate-950 border border-indigo-900/30 rounded-lg">
-      <span className="font-serif text-[10px] text-amber-400 font-bold line-clamp-3 leading-tight mb-1">{title}</span>
+    <div className="w-full h-full p-4 flex flex-col items-center justify-center text-center bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl">
+      <span className="font-serif text-sm text-yellow-300 font-bold line-clamp-3 leading-tight mb-2">{title}</span>
       {genres && genres[0] && (
-        <span className="text-[8px] text-indigo-400/80 border border-indigo-900/40 px-1.5 py-0.5 rounded-full uppercase tracking-wider scale-90">{genres[0]}</span>
+        <span className="text-xs text-blue-200 border border-blue-400/40 px-2 py-0.5 rounded-full uppercase tracking-wider">{genres[0]}</span>
       )}
+    </div>
+  );
+}
+
+function AuthorAvatar({ author, size = 64 }: { author: AuthorSuggestion; size?: number }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const hasImg = author.image_url && !imgFailed;
+  if (hasImg) {
+    return (
+      <img
+        src={author.image_url!}
+        alt={author.name}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover' }}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 800,
+        fontSize: Math.round(size * 0.4),
+        fontFamily: 'Plus Jakarta Sans, sans-serif',
+        boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
+        border: '3px solid white'
+      }}
+    >
+      {author.name.charAt(0).toUpperCase()}
     </div>
   );
 }
@@ -92,7 +160,6 @@ export default function Onboarding() {
   const { user, token, setPreferences, setOnboarded, addToast, refreshUser } = useAppStore();
   const router = useRouter();
 
-  // Onboarding Wizard States
   const [step, setStep] = useState(0);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
@@ -101,7 +168,6 @@ export default function Onboarding() {
   const [customGoal, setCustomGoal] = useState(24);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
-  // Search & Loading States
   const [authorQuery, setAuthorQuery] = useState('');
   const [authorSuggestions, setAuthorSuggestions] = useState<AuthorSuggestion[]>([]);
   const [popularAuthors, setPopularAuthors] = useState<AuthorSuggestion[]>([]);
@@ -109,19 +175,10 @@ export default function Onboarding() {
   const [booksLoading, setBooksLoading] = useState(false);
   const [authorSearchLoading, setAuthorSearchLoading] = useState(false);
 
-  // Profile Generation Ticks
   const [profileTicks, setProfileTicks] = useState<string[]>([]);
   const [currentTickIndex, setCurrentTickIndex] = useState(0);
   const calibrationStarted = useRef(false);
 
-  // Redirection guard
-  useEffect(() => {
-    if (!token) {
-      router.replace('/login');
-    }
-  }, [token, router]);
-
-  // Load Popular Authors once on mount
   useEffect(() => {
     const fetchPopularAuthors = async () => {
       try {
@@ -137,7 +194,6 @@ export default function Onboarding() {
     fetchPopularAuthors();
   }, []);
 
-  // Search Authors as type
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       if (authorQuery.trim().length >= 2) {
@@ -161,7 +217,6 @@ export default function Onboarding() {
     return () => clearTimeout(delayDebounce);
   }, [authorQuery]);
 
-  // Fetch sample books when step moves to Step 6 (index 5)
   useEffect(() => {
     if (step === 5) {
       const fetchSampleBooks = async () => {
@@ -184,7 +239,6 @@ export default function Onboarding() {
     }
   }, [step, selectedGenres, addToast]);
 
-  // Handle Calibration Ticks & API Submission
   useEffect(() => {
     if (step === 6 && !calibrationStarted.current) {
       calibrationStarted.current = true;
@@ -215,6 +269,15 @@ export default function Onboarding() {
     }
   }, [step]);
 
+  useEffect(() => {
+    if (step === 7) {
+      const timer = setTimeout(() => {
+        router.replace('/');
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [step, router]);
+
   const submitOnboardingProfile = async () => {
     const finalGoal = goalType === 'Custom' ? customGoal : (GOAL_OPTIONS.find(g => g.label === goalType)?.value || 24);
     const payload = {
@@ -236,7 +299,6 @@ export default function Onboarding() {
       });
 
       if (res.ok) {
-        // Sync local zustand store
         const prefs = {
           preferred_genres: selectedGenres,
           preferred_authors: selectedAuthors,
@@ -247,12 +309,12 @@ export default function Onboarding() {
         setOnboarded(true);
         await refreshUser();
         setTimeout(() => {
-          setStep(7); // Go to Completion screen
+          setStep(7);
         }, 500);
       } else {
         const data = await res.json();
         addToast(data.detail || 'Failed to save profile. Try again.', 'error');
-        setStep(5); // Go back to books selection to retry
+        setStep(5);
         calibrationStarted.current = false;
       }
     } catch (e) {
@@ -271,8 +333,8 @@ export default function Onboarding() {
       return;
     }
     if (step === 3) {
-      const finalReadingGoal = goalType === 'Custom' 
-        ? Number(customGoal) 
+      const finalReadingGoal = goalType === 'Custom'
+        ? Number(customGoal)
         : (GOAL_OPTIONS.find(g => g.label === goalType)?.value || 0);
       if (!finalReadingGoal || finalReadingGoal <= 0) {
         addToast('Please select a valid reading goal to proceed.', 'info');
@@ -296,44 +358,30 @@ export default function Onboarding() {
 
   const progress = ((step + 1) / STEPS.length) * 100;
 
-  // Automatic redirect to dashboard after 3.5s on completion step
-  useEffect(() => {
-    if (step === 7) {
-      const timer = setTimeout(() => {
-        router.replace('/');
-      }, 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [step, router]);
-
-  // Custom styling elements to force glassmorphism & deep spotify/netflix styling
-  const gradientBg = {
-    background: 'radial-gradient(circle at top left, #0e172a, #020617, #1e1b4b)',
-    position: 'fixed' as const,
-    top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 999,
-    overflowY: 'auto' as const,
-    display: 'flex',
-    flexDirection: 'column' as const,
-  };
-
   return (
-    <div style={gradientBg} className="text-white w-full h-full min-h-screen py-8 px-4 sm:py-12 sm:px-8 md:px-12 flex flex-col justify-between items-center">
-      {/* Container Layout - Max Width 7xl */}
-      <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col justify-between">
-        
-        {/* Animated Progress Bar */}
+    <div className="fixed inset-0 bg-[#F8FAFC] overflow-y-auto overflow-x-hidden z-[999]">
+      <div className="w-full max-w-7xl mx-auto px-6 md:px-10 py-6 min-h-screen flex flex-col">
+
+        {/* Progress Bar */}
         {step < 6 && (
           <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-300 uppercase">
-                Onboarding Step {step + 1} of {STEPS.length - 2}
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm font-semibold tracking-wide text-slate-500">
+                Step {step + 1} of {STEPS.length - 2}
               </span>
-              <span className="text-xs font-bold text-amber-400">{Math.round(progress)}% Completed</span>
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => { useAppStore.getState().logout(); router.replace('/login'); }}
+                  className="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  Logout
+                </button>
+                <span className="text-sm font-bold text-blue-600">{Math.round(progress)}% complete</span>
+              </div>
             </div>
-            <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/10">
-              <motion.div 
-                className="bg-gradient-to-r from-rose-500 via-purple-500 to-amber-400 h-full rounded-full"
+            <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+              <motion.div
+                className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -342,30 +390,30 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Navigation Indicator Pills */}
+        {/* Step Indicator Pills */}
         {step < 6 && (
-          <div className="flex flex-wrap gap-2 justify-center mb-8">
+          <div className="flex flex-wrap gap-2.5 justify-center mb-8">
             {STEPS.slice(0, 6).map((label, idx) => (
               <div
                 key={label}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${
-                  idx === step 
-                    ? 'bg-rose-900/80 text-white border border-rose-500 shadow-md shadow-rose-900/20' 
-                    : idx < step 
-                      ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/50' 
-                      : 'bg-slate-950/60 text-slate-400 border border-slate-900'
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  idx === step
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                    : idx < step
+                      ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                      : 'bg-white text-slate-400 border border-slate-200'
                 }`}
               >
-                {idx < step ? '✓ ' : ''}{label}
+                {idx < step && <Check size={14} className="inline mr-1 -mt-0.5" />}{label}
               </div>
             ))}
           </div>
         )}
 
-        {/* Wizard Steps Content */}
-        <div className="flex-1 flex flex-col justify-center">
+        {/* Wizard Content */}
+        <div className="flex-1 flex flex-col">
           <AnimatePresence mode="wait">
-            
+
             {/* STEP 1: Welcome Screen */}
             {step === 0 && (
               <motion.div
@@ -374,33 +422,33 @@ export default function Onboarding() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="text-center space-y-6 max-w-2xl mx-auto"
+                className="flex-1 flex flex-col items-center justify-center text-center space-y-8 max-w-2xl w-full mx-auto"
               >
-                <div className="inline-flex p-4 bg-gradient-to-br from-rose-900/50 to-purple-900/50 border border-rose-800/30 rounded-2xl shadow-xl shadow-rose-950/20 animate-pulse">
-                  <Sparkles size={48} className="text-amber-500" />
+                <div className="inline-flex p-5 bg-blue-50 border border-blue-100 rounded-3xl shadow-lg shadow-blue-100">
+                  <Sparkles size={52} className="text-blue-600" />
                 </div>
-                <h1 className="text-3xl sm:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-rose-400 bg-clip-text text-transparent">
-                  Welcome to LitRealm
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+                  Welcome to <span className="text-blue-600">LitRealm</span>
                 </h1>
-                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                  Embark on a highly personalized reading adventure. Customize your tastes, set reading targets, and get intelligent book recommendations tailored uniquely to you.
+                <p className="text-slate-500 text-base sm:text-lg leading-relaxed max-w-xl mx-auto">
+                  Embark on a personalized reading adventure. Customize your tastes, set targets, and discover books tailored uniquely to you.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-4">
-                  <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/50 backdrop-blur-sm hover:border-rose-900/30 transition-all duration-300">
-                    <Compass className="text-rose-500 mx-auto mb-3" size={28} />
-                    <h3 className="font-bold text-sm text-slate-200">Smart Discovery</h3>
-                    <p className="text-xs text-slate-400 mt-1">Weighted recommendation formulas mapping your preferred genres, authors, and interests.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-10 pt-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300">
+                    <Compass className="text-blue-500 mx-auto mb-4" size={32} />
+                    <h3 className="font-bold text-base text-slate-800">Smart Discovery</h3>
+                    <p className="text-sm text-slate-500 mt-2 leading-relaxed">Weighted formulas mapping your preferred genres, authors, and interests.</p>
                   </div>
-                  <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/50 backdrop-blur-sm hover:border-purple-900/30 transition-all duration-300">
-                    <Target className="text-purple-500 mx-auto mb-3" size={28} />
-                    <h3 className="font-bold text-sm text-slate-200">Set Reading Goals</h3>
-                    <p className="text-xs text-slate-400 mt-1">Select a reading goal for the year and track your progress page-by-page.</p>
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300">
+                    <Target className="text-blue-500 mx-auto mb-4" size={32} />
+                    <h3 className="font-bold text-base text-slate-800">Set Reading Goals</h3>
+                    <p className="text-sm text-slate-500 mt-2 leading-relaxed">Select a reading goal for the year and track your progress.</p>
                   </div>
-                  <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/50 backdrop-blur-sm hover:border-amber-900/30 transition-all duration-300">
-                    <Library className="text-amber-500 mx-auto mb-3" size={28} />
-                    <h3 className="font-bold text-sm text-slate-200">Personalized Library</h3>
-                    <p className="text-xs text-slate-400 mt-1">Organize favorites, want to read, currently reading, and completed books seamlessly.</p>
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300">
+                    <Library className="text-blue-500 mx-auto mb-4" size={32} />
+                    <h3 className="font-bold text-base text-slate-800">Personalized Library</h3>
+                    <p className="text-sm text-slate-500 mt-2 leading-relaxed">Organize favorites, want to read, and completed books seamlessly.</p>
                   </div>
                 </div>
               </motion.div>
@@ -413,61 +461,56 @@ export default function Onboarding() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="space-y-6"
+                className="flex-1 flex flex-col space-y-6"
               >
                 <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-black text-rose-400">Choose Your Favorite Genres</h2>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Select at least <span className="text-rose-500 font-bold">3 genres</span> to customize your recommendations feed.</p>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Choose Your Favorite Genres</h2>
+                  <p className="text-slate-500 text-sm sm:text-base mt-2">Select at least <span className="text-blue-600 font-bold">3 genres</span> to customize your recommendations.</p>
                 </div>
 
-                {/* Spotify-style Genre Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {GENRES.map((g, idx) => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+                  {GENRES.map((g) => {
                     const isSelected = selectedGenres.includes(g);
-                    // generate unique color hue based on index for Spotify style cards
-                    const hue = (idx * 57) % 360;
-                    const cardBg = isSelected 
-                      ? `hsla(${hue}, 70%, 15%, 0.75)`
-                      : 'rgba(15, 23, 42, 0.4)';
-                    const cardBorder = isSelected
-                      ? `1px solid hsla(${hue}, 80%, 45%, 0.8)`
-                      : '1px solid rgba(51, 65, 85, 0.3)';
-                    const dotColor = `hsla(${hue}, 80%, 55%, 1)`;
-
                     return (
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
                         key={g}
                         onClick={() => setSelectedGenres(prev =>
                           prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
                         )}
-                        className={`p-4 rounded-xl text-left font-bold text-sm relative transition-all duration-300 h-24 overflow-hidden border flex flex-col justify-between`}
-                        style={{ background: cardBg, border: cardBorder }}
-                      >
-                        {/* Decorative circle glow */}
-                        <div 
-                          className="absolute -right-6 -bottom-6 w-16 h-16 rounded-full blur-xl opacity-30"
-                          style={{ backgroundColor: dotColor }}
-                        />
-
-                        <div className="flex justify-between items-center">
-                          <span style={{ color: isSelected ? '#ffffff' : '#94a3b8' }} className="z-10">{g}</span>
-                          {isSelected ? (
-                            <div className="bg-white text-slate-900 rounded-full p-0.5 z-10">
-                              <Check size={12} className="stroke-[3]" />
-                            </div>
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border border-slate-700 z-10" />
-                          )}
-                        </div>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-normal z-10">CURATED</span>
+                         className={`p-6 rounded-2xl text-left transition-all duration-300 min-h-[150px] overflow-hidden border-2 flex flex-col justify-between group ${
+                           isSelected
+                             ? 'bg-white border-blue-500 shadow-lg shadow-blue-100'
+                             : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
+                         }`}
+                       >
+                         <div className="flex justify-between items-start">
+                           <div className={`p-3 rounded-xl transition-all duration-300 ${
+                             isSelected
+                               ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                               : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                           }`}>
+                             {GENRE_ICON_MAP[g] || <BookOpen size={24} />}
+                           </div>
+                           {isSelected ? (
+                             <div className="bg-blue-600 text-white rounded-full p-1">
+                               <Check size={14} className="stroke-[3]" />
+                             </div>
+                           ) : (
+                             <div className="w-6 h-6 rounded-full border-2 border-slate-300 group-hover:border-blue-400 transition-colors" />
+                           )}
+                         </div>
+                         <div>
+                           <span className={`font-bold text-base block ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>{g}</span>
+                           <span className={`text-xs font-semibold uppercase tracking-wider ${isSelected ? 'text-blue-400' : 'text-slate-400'}`}>CURATED</span>
+                         </div>
                       </motion.button>
                     );
                   })}
                 </div>
-                <div className="text-center text-xs text-slate-400">
-                  Selected: <span className="text-white font-bold">{selectedGenres.length}</span> / 3 minimum
+                <div className="text-center text-sm text-slate-500">
+                  Selected: <span className="text-blue-600 font-bold">{selectedGenres.length}</span> / 3 minimum
                 </div>
               </motion.div>
             )}
@@ -479,34 +522,33 @@ export default function Onboarding() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="space-y-6"
+                className="flex-1 flex flex-col space-y-6"
               >
                 <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-black text-purple-400">Select Favorite Authors</h2>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Find and select authors you enjoy. Recommendations will prioritize their works.</p>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Select Favorite Authors</h2>
+                  <p className="text-slate-500 text-sm sm:text-base mt-2">Find and select authors you enjoy. Recommendations will prioritize their works.</p>
                 </div>
 
-                {/* Author Search bar */}
-                <div className="relative max-w-md mx-auto">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search size={16} className="text-slate-500" />
+                {/* Author Search */}
+                <div className="relative max-w-lg mx-auto w-full">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Search size={20} className="text-slate-400" />
                   </div>
                   <input
                     type="text"
                     value={authorQuery}
                     onChange={e => setAuthorQuery(e.target.value)}
                     placeholder="Search by author name..."
-                    className="w-full bg-white/5 border border-white/10 focus:border-purple-500/80 focus:bg-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-slate-400 transition-all outline-none backdrop-blur-md"
+                    className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 rounded-2xl py-4 pl-12 pr-4 text-base text-slate-800 placeholder-slate-400 transition-all outline-none"
                   />
                   {authorSearchLoading && (
-                    <div className="absolute right-3 top-3.5">
-                      <div className="w-4 h-4 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                    <div className="absolute right-4 top-4">
+                      <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
                     </div>
                   )}
-                  
-                  {/* Search Suggestions Dropdown */}
+
                   {authorSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-slate-950/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-20 max-h-48 overflow-y-auto">
+                    <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 max-h-56 overflow-y-auto">
                       {authorSuggestions.map(author => (
                         <button
                           key={author.id}
@@ -517,45 +559,47 @@ export default function Onboarding() {
                             setAuthorQuery('');
                             setAuthorSuggestions([]);
                           }}
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-purple-950/30 hover:text-purple-300 transition-all flex items-center justify-between"
+                          className="w-full text-left px-5 py-3.5 text-sm hover:bg-blue-50 hover:text-blue-700 transition-all flex items-center justify-between border-b border-slate-100 last:border-b-0"
                         >
-                          <span>{author.name}</span>
-                          <Check size={14} className="opacity-0 hover:opacity-100 text-purple-400" />
+                          <span className="font-medium text-slate-700">{author.name}</span>
+                          <Plus size={16} className="text-blue-500" />
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* Selected Authors Badges */}
-                <div className="flex flex-wrap gap-2 justify-center min-h-[40px]">
+                {/* Selected Authors */}
+                <div className="flex flex-wrap gap-2.5 justify-center min-h-[44px]">
                   {selectedAuthors.map(author => (
                     <motion.span
                       layout
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       key={author}
-                      className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-950 to-indigo-950 border border-purple-800/40 text-purple-200 text-xs font-bold px-3 py-1.5 rounded-full"
+                      className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-md shadow-blue-200"
                     >
                       <span>{author}</span>
                       <button
                         onClick={() => setSelectedAuthors(selectedAuthors.filter(x => x !== author))}
-                        className="text-purple-400 hover:text-rose-400 transition-all text-sm font-black ml-1 outline-none"
+                        className="text-blue-200 hover:text-white transition-all"
                       >
-                        ×
+                        <X size={14} />
                       </button>
                     </motion.span>
                   ))}
                 </div>
 
-                {/* Suggested/Popular Authors list */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Suggested Authors</h4>
-                  <div className="flex flex-wrap gap-2 justify-center max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                    {popularAuthors.slice(0, 15).map(author => {
+                {/* Popular Authors Grid (matching Settings page style) */}
+                <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 text-center">Suggested Authors</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+                    {popularAuthors.slice(0, 12).map(author => {
                       const isSelected = selectedAuthors.includes(author.name);
                       return (
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
                           key={author.id}
                           onClick={() => {
                             if (isSelected) {
@@ -564,15 +608,27 @@ export default function Onboarding() {
                               setSelectedAuthors([...selectedAuthors, author.name]);
                             }
                           }}
-                          className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300 flex items-center gap-1.5 ${
-                            isSelected
-                              ? 'bg-purple-900 border-purple-500 text-white'
-                              : 'bg-slate-950/40 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
-                          }`}
-                        >
-                          {isSelected && <UserCheck size={12} />}
-                          {author.name}
-                        </button>
+                         className={`p-6 rounded-2xl border-2 text-center transition-all duration-300 flex flex-col items-center gap-4 ${
+                           isSelected
+                             ? 'bg-blue-50 border-blue-500 shadow-lg shadow-blue-100'
+                             : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
+                         }`}
+                       >
+                         {isSelected && (
+                           <div className="absolute top-3 right-3 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                             <Check size={12} className="text-white stroke-[3]" />
+                           </div>
+                         )}
+                         <div className="relative">
+                           <AuthorAvatar author={author} size={64} />
+                         </div>
+                         <p className={`font-bold text-sm leading-tight ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>
+                           {author.name}
+                         </p>
+                         {author.nationality && (
+                           <p className="text-xs text-slate-400 font-medium">{author.nationality}</p>
+                         )}
+                        </motion.button>
                       );
                     })}
                   </div>
@@ -587,67 +643,68 @@ export default function Onboarding() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="space-y-6"
+                className="flex-1 flex flex-col space-y-6"
               >
                 <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-black text-amber-400">Set Your Reading Goal</h2>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-2">How many books do you plan to read this year? Establish your target.</p>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Set Your Reading Goal</h2>
+                  <p className="text-slate-500 text-sm sm:text-base mt-2">How many books do you plan to read this year? Establish your target.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 max-w-3xl mx-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-5 max-w-5xl mx-auto w-full">
                   {GOAL_OPTIONS.map(g => (
                     <motion.button
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                       key={g.label}
                       onClick={() => setGoalType(g.label)}
-                      className={`p-5 rounded-2xl border text-center transition-all duration-300 flex flex-col justify-between h-40 ${
-                        goalType === g.label
-                          ? 'bg-amber-500/20 border-amber-500/80 shadow-lg shadow-amber-950/40 text-white'
-                          : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="mx-auto bg-amber-500/10 p-2 rounded-xl text-amber-500 mb-2">
-                        <Award size={20} />
-                      </div>
-                      
-                      {g.label === 'Custom' ? (
-                        <div className="flex flex-col items-center">
-                          <span className="text-2xl font-black text-amber-500">{customGoal}</span>
-                          <span className="text-[10px] text-slate-400 uppercase mt-1">BOOKS</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <span className="text-3xl font-black text-amber-500">{g.value}</span>
-                          <span className="text-[10px] text-slate-400 uppercase mt-1">BOOKS</span>
-                        </div>
-                      )}
-                      
-                      <div>
-                        <h3 className="font-bold text-xs text-slate-200 mt-2">{g.label}</h3>
-                        <p className="text-[9px] text-slate-400 mt-1">{g.desc}</p>
-                      </div>
+                         className={`p-6 rounded-2xl border-2 text-center transition-all duration-300 flex flex-col justify-between min-h-[220px] ${
+                           goalType === g.label
+                             ? 'bg-blue-50 border-blue-500 shadow-lg shadow-blue-100'
+                             : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
+                         }`}
+                       >
+                         <div className={`mx-auto p-3 rounded-xl transition-all ${
+                           goalType === g.label ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'
+                         }`}>
+                           <Award size={26} />
+                         </div>
+
+                         {g.label === 'Custom' ? (
+                           <div className="flex flex-col items-center">
+                             <span className="text-4xl font-extrabold text-blue-600">{customGoal}</span>
+                             <span className="text-xs text-slate-400 uppercase font-bold mt-1">BOOKS</span>
+                           </div>
+                         ) : (
+                           <div className="flex flex-col items-center">
+                             <span className="text-4xl font-extrabold text-blue-600">{g.value}</span>
+                             <span className="text-xs text-slate-400 uppercase font-bold mt-1">BOOKS</span>
+                           </div>
+                         )}
+
+                         <div>
+                           <h3 className="font-bold text-base text-slate-700 mt-2">{g.label}</h3>
+                           <p className="text-xs text-slate-400 mt-1">{g.desc}</p>
+                         </div>
                     </motion.button>
                   ))}
                 </div>
 
-                {/* Custom Goal Slider */}
                 {goalType === 'Custom' && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="max-w-md mx-auto bg-white/5 border border-white/10 p-6 rounded-2xl text-center space-y-4 backdrop-blur-md"
+                    className="max-w-lg mx-auto bg-white border-2 border-slate-200 p-8 rounded-2xl text-center space-y-5"
                   >
-                    <label className="text-xs font-bold text-slate-300 block">Drag to adjust goal: {customGoal} books per year</label>
+                    <label className="text-sm font-bold text-slate-600 block">Drag to adjust goal: <span className="text-blue-600">{customGoal}</span> books per year</label>
                     <input
                       type="range"
                       min={1}
                       max={200}
                       value={customGoal}
                       onChange={e => setCustomGoal(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
-                    <div className="flex justify-between text-[10px] text-slate-400 px-1">
+                    <div className="flex justify-between text-xs text-slate-400 font-medium px-1">
                       <span>1 Book</span>
                       <span>100 Books</span>
                       <span>200 Books</span>
@@ -664,39 +721,39 @@ export default function Onboarding() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="space-y-6"
+                className="flex-1 flex flex-col space-y-6"
               >
                 <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-black text-rose-400">What are your reading interests?</h2>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Select at least <span className="text-rose-500 font-bold">1 interest</span>. This matches Netflix-style personalization grids.</p>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">What are your reading interests?</h2>
+                  <p className="text-slate-500 text-sm sm:text-base mt-2">Select at least <span className="text-blue-600 font-bold">1 interest</span>. This helps us personalize your experience.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto w-full flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
                   {INTERESTS.map(item => {
                     const isSelected = selectedInterests.includes(item.id);
                     return (
                       <motion.button
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         key={item.id}
                         onClick={() => setSelectedInterests(prev =>
                           prev.includes(item.id) ? prev.filter(x => x !== item.id) : [...prev, item.id]
                         )}
-                        className={`p-4 rounded-2xl border text-left flex items-start gap-4 transition-all duration-300 ${
-                          isSelected
-                            ? 'bg-rose-500/20 border-rose-500/80 shadow-md shadow-rose-950/40 text-white'
-                            : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        <div className="text-3xl bg-slate-900 p-2.5 rounded-xl border border-slate-800/80 shadow-md">
-                          {item.icon}
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <h3 className="font-bold text-sm text-slate-100 flex items-center justify-between">
+                         className={`p-6 rounded-2xl border-2 text-left flex items-start gap-5 transition-all duration-300 ${
+                           isSelected
+                             ? 'bg-blue-50 border-blue-500 shadow-lg shadow-blue-100'
+                             : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
+                         }`}
+                       >
+                         <div className="text-3xl bg-slate-100 p-3 rounded-xl border border-slate-200 shadow-sm flex-shrink-0">
+                           {item.icon}
+                         </div>
+                         <div className="flex-1 space-y-1.5">
+                           <h3 className="font-bold text-lg text-slate-800 flex items-center justify-between">
                             <span>{item.id}</span>
-                            {isSelected && <CheckCircle2 size={16} className="text-rose-500" />}
+                            {isSelected && <CheckCircle2 size={18} className="text-blue-500" />}
                           </h3>
-                          <p className="text-xs text-slate-400 leading-normal">{item.desc}</p>
+                          <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
                         </div>
                       </motion.button>
                     );
@@ -712,113 +769,109 @@ export default function Onboarding() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="space-y-6"
+                className="flex-1 flex flex-col space-y-6"
               >
                 <div className="text-center">
-                  <h2 className="text-2xl sm:text-3xl font-black text-rose-400">Select books you like</h2>
-                  <p className="text-slate-300 text-xs sm:text-sm mt-2">Pick at least <span className="text-rose-500 font-bold">5 books</span>. We prioritize these as content-similarity seeds.</p>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Select books you like</h2>
+                  <p className="text-slate-500 text-sm sm:text-base mt-2">Pick at least <span className="text-blue-600 font-bold">5 books</span>. We prioritize these as content-similarity seeds.</p>
                 </div>
 
                 {booksLoading ? (
-                  /* Loading Skeletons */
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 max-h-[50vh] overflow-hidden pr-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-5 flex-1">
                     {Array.from({ length: 10 }).map((_, idx) => (
-                      <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-3 h-64 animate-pulse">
-                        <div className="bg-white/10 w-full h-40 rounded-lg" />
-                        <div className="bg-white/10 w-3/4 h-3.5 rounded" />
-                        <div className="bg-white/10 w-1/2 h-2.5 rounded" />
+                      <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 animate-pulse">
+                        <div className="bg-slate-100 w-full aspect-[2/3] rounded-xl" />
+                        <div className="bg-slate-100 w-3/4 h-4 rounded-lg" />
+                        <div className="bg-slate-100 w-1/2 h-3 rounded-lg" />
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-5 flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
                     {sampleBooks.map(book => {
                       const isSelected = selectedBooks.includes(book.id);
                       return (
                         <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
                           key={book.id}
                           onClick={() => setSelectedBooks(prev =>
                             prev.includes(book.id) ? prev.filter(x => x !== book.id) : [...prev, book.id]
                           )}
-                          className={`p-3 rounded-xl border text-left relative transition-all duration-300 h-68 flex flex-col justify-between overflow-hidden group ${
-                            isSelected
-                              ? 'bg-rose-500/10 border-rose-500 shadow-lg shadow-rose-950/30'
-                              : 'bg-white/5 border border-white/10 hover:border-white/20'
-                          }`}
+                         className={`p-5 rounded-2xl border-2 text-left relative transition-all duration-300 flex flex-col overflow-hidden group ${
+                           isSelected
+                             ? 'bg-blue-50 border-blue-500 shadow-lg shadow-blue-100'
+                             : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
+                         }`}
                         >
-                          {/* Image cover fallback placeholder check */}
-                          <div className="relative w-full h-40 rounded-lg overflow-hidden bg-slate-900 border border-slate-800/80 mb-2 shadow-inner flex items-center justify-center">
+                          <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden bg-slate-100 mb-3 shadow-md">
                             <OnboardingBookCover coverUrl={book.cover_url} title={book.title} genres={book.genres} />
-                            
-                            {/* Selection checkmark badge */}
+
                             {isSelected && (
-                              <div className="absolute inset-0 bg-rose-950/40 backdrop-blur-xs flex items-center justify-center">
-                                <div className="bg-rose-900 text-white rounded-full p-1.5 shadow-lg border border-rose-500">
+                              <div className="absolute inset-0 bg-blue-600/20 backdrop-blur-[1px] flex items-center justify-center">
+                                <div className="bg-blue-600 text-white rounded-full p-2 shadow-lg">
                                   <Heart size={20} className="fill-white stroke-[0.5]" />
                                 </div>
+                              </div>
+                            )}
+
+                            {book.rating > 0 && (
+                              <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-slate-800 px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+                                <Star size={10} className="fill-yellow-400 text-yellow-400" />
+                                <span>{book.rating.toFixed(1)}</span>
                               </div>
                             )}
                           </div>
 
                           <div className="flex-1 flex flex-col justify-between space-y-1">
-                            <div className="line-clamp-2 font-bold text-xs text-slate-100 group-hover:text-rose-400 transition-all leading-tight">
+                            <div className="line-clamp-2 font-bold text-sm text-slate-800 group-hover:text-blue-600 transition-all leading-tight">
                               {book.title}
                             </div>
-                            <div className="text-[10px] text-slate-400 truncate">
+                            <div className="text-xs text-slate-400 truncate font-medium">
                               {book.author_name}
                             </div>
-                            {book.rating > 0 && (
-                              <div className="flex items-center gap-1 text-[10px] text-amber-500 font-bold">
-                                <Star size={10} className="fill-amber-500" />
-                                <span>{book.rating.toFixed(1)}</span>
-                              </div>
-                            )}
                           </div>
                         </motion.button>
                       );
                     })}
                   </div>
                 )}
-                
-                <div className="text-center text-xs text-slate-400">
-                  Selected: <span className="text-white font-bold">{selectedBooks.length}</span> / 5 minimum
+
+                <div className="text-center text-sm text-slate-500">
+                  Selected: <span className="text-blue-600 font-bold">{selectedBooks.length}</span> / 5 minimum
                 </div>
               </motion.div>
             )}
 
-            {/* STEP 7: Calibration Screen (Loader) */}
+            {/* STEP 7: Calibration Screen */}
             {step === 6 && (
               <motion.div
                 key="calibration"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center space-y-8 max-w-md mx-auto"
+                className="flex-1 flex flex-col items-center justify-center text-center space-y-8 max-w-lg w-full mx-auto"
               >
-                <div className="relative w-24 h-24 mx-auto">
-                  {/* Glowing Spinner */}
-                  <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
-                  <motion.div 
-                    className="absolute inset-0 border-4 border-t-rose-500 border-r-purple-500 border-b-transparent border-l-transparent rounded-full"
+                <div className="relative w-28 h-28 mx-auto">
+                  <div className="absolute inset-0 border-4 border-slate-200 rounded-full" />
+                  <motion.div
+                    className="absolute inset-0 border-4 border-t-blue-600 border-r-blue-400 border-b-transparent border-l-transparent rounded-full"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center text-2xl font-black text-rose-500">
+                  <div className="absolute inset-0 flex items-center justify-center text-3xl font-extrabold text-blue-600">
                     {Math.min(100, Math.round((currentTickIndex / 6) * 100))}%
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-xl font-bold tracking-tight text-slate-200">Generating recommendation profile...</h3>
-                  <p className="text-slate-400 text-xs">Calibrating cold-start filters and populating relational interest indices.</p>
+                  <h3 className="text-xl font-bold tracking-tight text-slate-800">Generating recommendation profile...</h3>
+                  <p className="text-slate-500 text-sm">Calibrating cold-start filters and populating relational interest indices.</p>
                 </div>
 
-                {/* Profiler loading logs */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-left font-mono text-xs text-slate-300 space-y-2.5 max-h-48 overflow-y-auto backdrop-blur-md">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 text-left text-sm text-slate-600 space-y-3 max-h-48 overflow-y-auto">
                   {profileTicks.map((tick, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-emerald-400 animate-fadeIn font-semibold">
-                      <span>⚡</span>
+                    <div key={idx} className="flex items-start gap-2 text-blue-600 font-semibold">
+                      <span className="text-blue-400">&#9889;</span>
                       <span>{tick}</span>
                     </div>
                   ))}
@@ -832,27 +885,26 @@ export default function Onboarding() {
                 key="completion"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center space-y-6 max-w-md mx-auto"
+                className="flex-1 flex flex-col items-center justify-center text-center space-y-6 max-w-lg w-full mx-auto"
               >
-                <div className="inline-flex p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-full text-emerald-400 shadow-xl shadow-emerald-950/30 animate-bounce">
-                  <CheckCircle2 size={64} className="stroke-[2.5]" />
+                <div className="inline-flex p-5 bg-blue-50 border border-blue-100 rounded-full text-blue-600 shadow-xl shadow-blue-100 animate-bounce">
+                  <CheckCircle2 size={72} className="stroke-[2]" />
                 </div>
-                <h1 className="text-3xl font-black text-emerald-400">Profile Calibrated!</h1>
-                <p className="text-slate-300 text-sm">
-                  We have mapped your preferences. Your personalized LitRealm dashboard is calibrated and ready.
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">Profile Calibrated!</h1>
+                <p className="text-slate-500 text-base">
+                  We have mapped your preferences. Your personalized LitRealm dashboard is ready.
                 </p>
 
-                {/* Profile Strength Card */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 grid grid-cols-2 gap-4 backdrop-blur-md">
-                  <div className="border-r border-white/10 p-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Profile Strength</span>
-                    <span className="text-3xl font-black text-amber-500 mt-1 block">95%</span>
-                    <span className="text-[9px] text-slate-400 block mt-1">Excellent seed mapping</span>
+                <div className="bg-white border border-slate-200 rounded-2xl p-8 grid grid-cols-2 gap-6">
+                  <div className="border-r border-slate-200 p-3">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Profile Strength</span>
+                    <span className="text-3xl font-extrabold text-blue-600 mt-2 block">95%</span>
+                    <span className="text-xs text-slate-400 block mt-1">Excellent seed mapping</span>
                   </div>
-                  <div className="p-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Recommender State</span>
-                    <span className="text-2xl font-black text-emerald-400 mt-1.5 block">READY</span>
-                    <span className="text-[9px] text-slate-400 block mt-1.5">Hybrid formula online</span>
+                  <div className="p-3">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Recommender State</span>
+                    <span className="text-2xl font-extrabold text-blue-600 mt-2 block">READY</span>
+                    <span className="text-xs text-slate-400 block mt-1">Hybrid formula online</span>
                   </div>
                 </div>
 
@@ -861,7 +913,7 @@ export default function Onboarding() {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => router.replace('/')}
-                    className="w-full btn-primary bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-bold py-4 rounded-xl border border-emerald-400/20 hover:shadow-lg hover:shadow-emerald-900/10 cursor-pointer text-sm"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl text-base shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all cursor-pointer"
                   >
                     Enter Dashboard
                   </motion.button>
@@ -872,27 +924,31 @@ export default function Onboarding() {
           </AnimatePresence>
         </div>
 
-        {/* Action Buttons */}
+        {/* Navigation Buttons */}
         {step < 6 && (
-          <div className="flex gap-4 justify-between mt-10 pt-6 border-t border-white/10">
-            <button
+          <div className="flex gap-4 justify-between mt-auto pt-6 border-t border-slate-200">
+            <motion.button
+              whileHover={{ scale: step === 0 ? 1 : 1.03 }}
+              whileTap={{ scale: step === 0 ? 1 : 0.97 }}
               onClick={handleBack}
               disabled={step === 0}
-              className={`px-6 py-3 rounded-xl border text-sm font-semibold flex items-center gap-2 cursor-pointer transition-all ${
-                step === 0 
-                  ? 'border-white/5 text-slate-600 cursor-not-allowed' 
-                  : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 hover:text-white'
+              className={`px-8 py-4 rounded-2xl border-2 text-base font-bold flex items-center gap-2.5 transition-all ${
+                step === 0
+                  ? 'border-slate-100 text-slate-300 cursor-not-allowed'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 shadow-sm'
               }`}
             >
-              <ArrowLeft size={14} /> Back
-            </button>
+              <ArrowLeft size={18} /> Back
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={handleNext}
-              className="px-8 py-3 bg-gradient-to-r from-rose-700 to-rose-900 hover:from-rose-600 hover:to-rose-800 text-white font-bold text-sm rounded-xl border border-rose-600/30 flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-rose-950/30"
+              className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-2xl flex items-center gap-2.5 shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transition-all cursor-pointer"
             >
-              Next <ChevronRight size={14} />
-            </button>
+              Next <ChevronRight size={18} />
+            </motion.button>
           </div>
         )}
 

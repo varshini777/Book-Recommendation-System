@@ -1,4 +1,23 @@
-INFO:     Started server process [30396]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['D:\\Book_Recomendation_System\\backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [10228] using WatchFiles
+INFO:     Started server process [16300]
+INFO:     Waiting for application startup.
+2026-06-23 21:34:06,960 [INFO] litrealm: Starting LitRealm API v2.0.0
+2026-06-23 21:34:06,964 [INFO] litrealm: Database initialized
+INFO:     Application startup complete.
+2026-06-23 21:51:37,933 [INFO] litrealm: GET /health status=200 duration=0.003s
+2026-06-23 21:51:38,599 [INFO] litrealm: GET /recommendations/trending status=200 duration=0.224s
+2026-06-23 21:51:39,049 [INFO] litrealm: GET /books/authors/list status=200 duration=0.039s
+2026-06-23 21:51:51,178 [INFO] litrealm: GET /books/onboarding-samples status=200 duration=0.112s
+2026-06-23 21:51:52,407 [INFO] litrealm: POST /auth/login status=401 duration=0.018s
+2026-06-23 22:03:49,812 [INFO] litrealm: GET /health status=200 duration=0.002s
+2026-06-23 22:04:04,988 [INFO] litrealm: GET /health status=200 duration=0.001s
+2026-06-23 22:04:05,129 [INFO] litrealm: GET /recommendations/trending status=200 duration=0.088s
+2026-06-23 22:04:05,283 [INFO] litrealm: GET /recommendations/top-rated status=200 duration=0.104s
+2026-06-23 22:04:05,343 [INFO] litrealm: GET /recommendations/hidden-gems status=200 duration=0.025s
+2026-06-23 22:04:05,443 [INFO] litrealm: GET /recommendations/new-releases status=200 duration=0.096s
+2026-06-23 22:04:05,497 [INFO] litrealm: GET /books/authors/list status=200 duration=0.020s
+2026-06-23 22:04:05,565 [INFO] litrealm: GET /books/onboarding-samples status=200 duration=0.062s
+2026-06-23 22:04:05,645 [INFO] litrealm: GET /books/2 status=200 duration=0.042s
+2026-06-23 22:04:05,791 [INFO] litrealm: GET /recommendations/similar/2 status=200 duration=0.141s

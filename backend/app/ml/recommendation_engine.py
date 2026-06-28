@@ -169,11 +169,6 @@ class RecommendationEngine:
                 if book.get('author') in user_preferences['preferred_authors']:
                     score += 2.0
             
-            # Language matching
-            if 'preferred_languages' in user_preferences:
-                if book.get('language') in user_preferences['preferred_languages']:
-                    score += 1.0
-            
             # Add book's rating as a factor
             score += book.get('rating', 0) * 0.5
             

@@ -47,8 +47,11 @@ def search_books(
 
 @router.get("/genres/list")
 def get_genres(db: Session = Depends(get_db)):
-    genres = db.query(Genre).all()
+    forbidden = ["Adult", "Erotica", "Explicit", "Mature", "Dark Romance", "NSFW", "Adult Romance", "Young Adult", "Romance"]
+    genres = db.query(Genre).filter(Genre.name.notin_(forbidden)).all()
     return [{"id": g.id, "name": g.name, "description": g.description} for g in genres]
+
+
 
 
 @router.get("/onboarding-samples")
@@ -96,14 +99,13 @@ def get_authors(
         if search:
             query = query.filter(Author.name.ilike(f"%{search}%"))
         authors = query.order_by(Author.name).limit(limit).all()
-    return [{"id": a.id, "name": a.name} for a in authors]
+    return [{"id": a.id, "name": a.name, "image_url": a.image_url, "nationality": a.nationality, "popularity": getattr(a, 'rating_count', 0)} for a in authors]
 
 
 @router.get("/")
 def get_books(
     query: Optional[str] = None,
     genre: Optional[str] = None,
-    language: Optional[str] = None,
     year: Optional[int] = None,
     min_rating: Optional[float] = None,
     author: Optional[str] = None,
@@ -114,7 +116,7 @@ def get_books(
 ):
     book_service = BookService(db)
     books, total = book_service.get_all_books(
-        query=query, genre=genre, language=language,
+        query=query, genre=genre,
         year=year, min_rating=min_rating, author=author,
         sort_by=sort_by, page=page, page_size=page_size
     )
@@ -134,7 +136,6 @@ def get_books(
         "filters": {
             "query": query,
             "genre": genre,
-            "language": language,
             "year": year,
             "min_rating": min_rating,
             "author": author,

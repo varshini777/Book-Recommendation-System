@@ -21,7 +21,7 @@ export const GENRES = [
   "Literary Fiction", "Contemporary Fiction"
 ];
 
-export const LANGUAGES = ["English", "Spanish", "French", "German"];
+
 
 // Generate 250+ High-Quality, 100% Clean, Well-known English Books
 export const BOOKS: Book[] = [

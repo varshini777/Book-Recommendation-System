@@ -26,6 +26,7 @@ export default function NavBar() {
     { href: '/catalog', label: 'Catalog', icon: <BookOpen size={16} /> },
     { href: '/library', label: 'Library', count: library.length, icon: <Library size={16} /> },
     { href: '/profile', label: 'Profile', icon: <User size={16} /> },
+    { href: '/settings', label: 'Settings', icon: <Settings size={16} /> },
   ];
 
   // Admin-only links — completely excluded from DOM for non-admin users

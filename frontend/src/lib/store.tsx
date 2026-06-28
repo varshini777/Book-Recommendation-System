@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Book, GENRES, LANGUAGES } from './data';
+import { Book, GENRES } from './data';
 
 export interface LibraryEntry {
   book: Book;
@@ -73,23 +73,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Helpers for persistent users list
-  const getStoredUsers = () =>
-    JSON.parse(localStorage.getItem('users') || '[]') as {
-      name: string;
-      email: string;
-      password: string;
-      avatar: string;
-      role: 'admin' | 'user';
-    }[];
+  const getStoredUsers = () => {
+    try {
+      return JSON.parse(localStorage.getItem('users') || '[]') as {
+        name: string;
+        email: string;
+        password: string;
+        avatar: string;
+        role: 'admin' | 'user';
+      }[];
+    } catch {
+      return [];
+    }
+  };
   const setStoredUsers = (users: any) => localStorage.setItem('users', JSON.stringify(users));
 
   // Hydrate on mount
   useEffect(() => {
     const dark = localStorage.getItem('dark') === 'true';
-    const lib = JSON.parse(localStorage.getItem('library') || '[]');
-    const p = JSON.parse(localStorage.getItem('prefs') || '{"genres":[],"languages":[],"authors":[]}');
+    let lib: LibraryEntry[] = [];
+    let p: UserPrefs = { genres: [], languages: [], authors: [] };
+    let u: User | null = null;
+    try { lib = JSON.parse(localStorage.getItem('library') || '[]'); } catch {}
+    try { p = JSON.parse(localStorage.getItem('prefs') || '{"genres":[],"languages":[],"authors":[]}'); } catch {}
+    try { u = JSON.parse(localStorage.getItem('user') || 'null'); } catch {}
     const ob = localStorage.getItem('onboarded') === 'true';
-    const u = JSON.parse(localStorage.getItem('user') || 'null');
     setDarkMode(dark);
     setLibrary(lib);
     setPrefsState(p);
@@ -224,8 +232,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let allEntries: any[] = [];
     users.forEach(u => {
       const libKey = `library_${u.email}`;
-      const lib = JSON.parse(localStorage.getItem(libKey) || '[]');
-      allEntries = allEntries.concat(lib);
+      try {
+        const lib = JSON.parse(localStorage.getItem(libKey) || '[]');
+        allEntries = allEntries.concat(lib);
+      } catch {}
     });
     const total = allEntries.length;
     const genreCount: Record<string, number> = {};

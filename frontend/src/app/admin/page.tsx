@@ -242,7 +242,7 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'users' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div className="admin-grid" style={{ gap: '24px' }}>
           <div className="card" style={{ padding: '32px', maxHeight: '70vh', overflow: 'auto' }}>
             <h2 style={{ fontSize: '1.4rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, color: '#6A1B29', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <Users size={20} /> Users ({users.length})

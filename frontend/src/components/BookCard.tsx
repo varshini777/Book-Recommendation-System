@@ -118,6 +118,9 @@ export default function BookCard({ book, showScore, showExplanation }: BookCardP
               }}
               loading="lazy"
               onError={() => setImgFailed(true)}
+              onLoad={(e) => {
+                if (e.currentTarget.naturalWidth <= 1) setImgFailed(true);
+              }}
             />
           ) : (
             <CoverPlaceholder title={book.title} author={author} genre={genres[0]} />

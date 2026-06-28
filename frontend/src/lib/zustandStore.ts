@@ -41,6 +41,7 @@ interface BookLike {
   genre?: string[];
   rating?: number;
   year?: number;
+  pages?: number;
 }
 
 interface UserPreferences {
@@ -65,9 +66,11 @@ interface AppState {
   darkMode: boolean;
   toasts: Array<{ id: string; message: string; type: 'success' | 'error' | 'info' }>;
   readingGoal: ReadingGoal | null;
+  authLoading: boolean;
 
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
+  setAuthLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -84,6 +87,7 @@ interface AppState {
   loadPreferences: () => Promise<void>;
   loadReadingGoal: () => Promise<void>;
   updateReadingGoal: (targetBooks: number) => Promise<boolean>;
+  initializeAuth: () => Promise<void>;
 
   toggleDark: () => void;
   addToast: (message: string, type: 'success' | 'error' | 'info') => void;
@@ -101,9 +105,11 @@ export const useAppStore = create<AppState>()(
       darkMode: false,
       toasts: [],
       readingGoal: null,
+      authLoading: true,
 
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
+      setAuthLoading: (loading: boolean) => set({ authLoading: loading }),
 
       login: async (email, password) => {
         try {
@@ -168,6 +174,26 @@ export const useAppStore = create<AppState>()(
           onboarded: false,
           readingGoal: null
         });
+      },
+
+      initializeAuth: async () => {
+        const { token } = get();
+        if (!token) {
+          set({ authLoading: false });
+          return;
+        }
+        try {
+          await Promise.all([
+            get().refreshUser(),
+            get().loadPreferences(),
+            get().loadLibrary(),
+            get().loadReadingGoal(),
+          ]);
+        } catch (e) {
+          console.error('Auth initialization error:', e);
+        } finally {
+          set({ authLoading: false });
+        }
       },
 
       refreshUser: async () => {
@@ -357,6 +383,11 @@ export const useAppStore = create<AppState>()(
         onboarded: state.onboarded,
         darkMode: state.darkMode,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.initializeAuth();
+        }
+      },
     }
   )
 );

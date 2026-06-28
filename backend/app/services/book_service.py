@@ -45,7 +45,6 @@ class BookService:
         self,
         query: Optional[str] = None,
         genre: Optional[str] = None,
-        language: Optional[str] = None,
         year: Optional[int] = None,
         min_rating: Optional[float] = None,
         author: Optional[str] = None,
@@ -67,6 +66,12 @@ class BookService:
                     conditions.append(Book.title.ilike(w))
                     conditions.append(Book.description.ilike(w))
                     conditions.append(Author.name.ilike(w))
+                
+                # Also allow ISBN match if the whole query (without spaces/dashes) matches an ISBN
+                clean_isbn = query.replace("-", "").replace(" ", "").strip()
+                conditions.append(Book.isbn == clean_isbn)
+                conditions.append(Book.isbn == query.strip())
+
                 books_query = books_query.outerjoin(Author, Book.author_id == Author.id).filter(
                     or_(*conditions)
                 )
@@ -76,16 +81,15 @@ class BookService:
                         Book.title.ilike(search_term),
                         Book.description.ilike(search_term),
                         Author.name.ilike(search_term),
-                        Genre.name.ilike(search_term)
+                        Genre.name.ilike(search_term),
+                        Book.isbn == query.strip().replace("-", ""),
+                        Book.isbn == query.strip()
                     )
                 )
                 books_query = books_query.join(Book.genres, isouter=True)
 
         if genre:
             books_query = books_query.join(Book.genres).filter(Genre.name == genre)
-
-        if language:
-            books_query = books_query.filter(Book.language == language)
 
         if year:
             books_query = books_query.filter(Book.year == year)

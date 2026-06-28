@@ -1,0 +1,15 @@
+INFO:     127.0.0.1:54581 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54582 - "GET /recommendations/trending?limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54583 - "GET /books/authors/list?popular=true&limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54601 - "GET /books/onboarding-samples?genres=Fiction&limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54605 - "POST /auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:57940 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /recommendations/trending?limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /recommendations/top-rated?limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /recommendations/hidden-gems?limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /recommendations/new-releases?limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /books/authors/list?popular=true&limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /books/onboarding-samples?genres=Fiction&limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /books/2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57953 - "GET /recommendations/similar/2?limit=3 HTTP/1.1" 200 OK

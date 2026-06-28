@@ -155,13 +155,15 @@ export default function BookDetail({ params }: { params: Promise<{ id: string }>
         <ArrowLeft size={16} /><span>Back to Catalog</span>
       </Link>
 
-      <div className="card" style={{ padding: 48, display: 'grid', gridTemplateColumns: '380px 1fr', gap: 48 }} className="card detail-grid">
+      <div className="card detail-grid" style={{ padding: 48, display: 'grid', gridTemplateColumns: '380px 1fr', gap: 48 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
           <div style={{ width: '100%', maxWidth: 320, position: 'relative' }}>
             {showCoverImage ? (
               <img src={cover} alt={book.title}
                 style={{ width: '100%', borderRadius: 16, border: '1px solid var(--border)', boxShadow: '20px 20px 40px rgba(0,0,0,0.15)', background: 'var(--surface)', minHeight: 400, objectFit: 'cover' }}
-                onError={() => setCoverFailed(true)} />
+                onError={() => setCoverFailed(true)}
+                onLoad={(e) => { if (e.currentTarget.naturalWidth <= 1) setCoverFailed(true); }}
+              />
             ) : (
               <div style={{
                 width: '100%', minHeight: 400, borderRadius: 16,

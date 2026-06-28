@@ -52,7 +52,6 @@ class BookResponse(BaseModel):
 class BookSearchRequest(BaseModel):
     query: Optional[str] = None
     genre: Optional[str] = None
-    language: Optional[str] = None
     year: Optional[int] = None
     min_rating: Optional[float] = None
     page: int = Field(default=1, ge=1)

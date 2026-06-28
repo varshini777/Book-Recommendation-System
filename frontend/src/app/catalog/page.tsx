@@ -35,7 +35,6 @@ interface Pagination {
 export default function Catalog() {
   const [query, setQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
-  const [selectedLang, setSelectedLang] = useState('');
   const [sortBy, setSortBy] = useState('rating_desc');
   const [books, setBooks] = useState<BookData[]>([]);
   const [genres, setGenres] = useState<{id: number; name: string}[]>([]);
@@ -68,7 +67,7 @@ export default function Catalog() {
       params.append('page_size', '20');
       if (query) params.append('query', query);
       if (selectedGenre) params.append('genre', selectedGenre);
-      if (selectedLang) params.append('language', selectedLang);
+
       if (sortBy) params.append('sort_by', sortBy);
 
       const res = await fetch(`${API}/books/?${params.toString()}`);
@@ -82,7 +81,7 @@ export default function Catalog() {
     } finally {
       setLoading(false);
     }
-  }, [query, selectedGenre, selectedLang, sortBy]);
+  }, [query, selectedGenre, sortBy]);
 
   const fetchGenres = async () => {
     try {
@@ -105,7 +104,7 @@ export default function Catalog() {
     const timeout = setTimeout(() => fetchBooks(1), 300);
     setSearchTimeout(timeout);
     return () => { if (searchTimeout) clearTimeout(searchTimeout); };
-  }, [query, selectedGenre, selectedLang, sortBy]);
+  }, [query, selectedGenre, sortBy]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -120,7 +119,7 @@ export default function Catalog() {
   const clearFilters = () => {
     setQuery('');
     setSelectedGenre('');
-    setSelectedLang('');
+
     setSortBy('rating_desc');
     setSuggestions([]);
     setShowSuggestions(false);
@@ -160,7 +159,7 @@ export default function Catalog() {
           </h3>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: '12px', alignItems: 'center' }} className="filter-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '12px', alignItems: 'center' }} className="filter-grid">
           <div style={{ position: 'relative' }} ref={searchRef}>
             <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 2 }} />
             <input
@@ -240,18 +239,7 @@ export default function Catalog() {
             ))}
           </select>
 
-          <select
-            value={selectedLang}
-            onChange={e => setSelectedLang(e.target.value)}
-            className="input-field"
-            style={{ cursor: 'pointer', height: '46px' }}
-          >
-            <option value="">All Languages</option>
-            <option value="English">English</option>
-            <option value="Spanish">Spanish</option>
-            <option value="French">French</option>
-            <option value="German">German</option>
-          </select>
+
 
           <div style={{ position: 'relative' }}>
             <ArrowUpDown size={14} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />

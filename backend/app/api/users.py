@@ -8,13 +8,66 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
+
+@router.get("/recommended-authors")
+def get_recommended_authors(
+    genres: str = "",
+    limit: int = 8,
+    db: Session = Depends(get_db)
+):
+    """
+    Given a comma-separated list of genre names, return the top authors
+    whose books belong to those genres, ranked by total rating_count.
+    Falls back to global popular authors when no genres are provided.
+    """
+    from app.db.models import Author, Book, Genre, book_genres
+    from sqlalchemy import func
+
+    genre_list = [g.strip() for g in genres.split(",") if g.strip()]
+
+    if genre_list:
+        # Find authors who have books in ANY of the requested genres
+        authors = (
+            db.query(Author, func.sum(Book.rating_count).label("popularity"))
+            .join(Book, Book.author_id == Author.id)
+            .join(book_genres, book_genres.c.book_id == Book.id)
+            .join(Genre, Genre.id == book_genres.c.genre_id)
+            .filter(Genre.name.in_(genre_list), Book.is_active == True)
+            .group_by(Author.id)
+            .order_by(func.sum(Book.rating_count).desc())
+            .limit(limit)
+            .all()
+        )
+    else:
+        # Fallback: globally popular authors
+        authors = (
+            db.query(Author, func.sum(Book.rating_count).label("popularity"))
+            .join(Book, Book.author_id == Author.id)
+            .filter(Book.is_active == True)
+            .group_by(Author.id)
+            .order_by(func.sum(Book.rating_count).desc())
+            .limit(limit)
+            .all()
+        )
+
+    return [
+        {
+            "id": a.id,
+            "name": a.name,
+            "bio": a.bio,
+            "image_url": a.image_url,
+            "nationality": a.nationality,
+            "popularity": pop or 0
+        }
+        for a, pop in authors
+    ]
+
 class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     avatar: Optional[str] = None
 
 class UserPreferencesUpdate(BaseModel):
     preferred_genres: Optional[List[str]] = None
-    preferred_languages: Optional[List[str]] = None
     preferred_authors: Optional[List[str]] = None
     onboarding_completed: Optional[bool] = None
 
@@ -106,14 +159,12 @@ def get_current_user_preferences(
         # Return default preferences
         return {
             "preferred_genres": [],
-            "preferred_languages": ["English"],
             "preferred_authors": [],
             "onboarding_completed": False
         }
     
     return {
         "preferred_genres": preferences.preferred_genres or [],
-        "preferred_languages": preferences.preferred_languages or [],
         "preferred_authors": preferences.preferred_authors or [],
         "onboarding_completed": preferences.onboarding_completed
     }
@@ -131,14 +182,12 @@ def update_current_user_preferences(
         preferences = user_service.update_user_preferences(
             user_id=user_id,
             preferred_genres=preferences_data.preferred_genres,
-            preferred_languages=preferences_data.preferred_languages,
             preferred_authors=preferences_data.preferred_authors,
             onboarding_completed=preferences_data.onboarding_completed
         )
         
         return {
             "preferred_genres": preferences.preferred_genres or [],
-            "preferred_languages": preferences.preferred_languages or [],
             "preferred_authors": preferences.preferred_authors or [],
             "onboarding_completed": preferences.onboarding_completed
         }
@@ -172,7 +221,6 @@ def submit_onboarding(
             user_id=user_id,
             preferred_genres=onboarding_data.genres,
             preferred_authors=onboarding_data.authors,
-            preferred_languages=["English"],
             onboarding_completed=True
         )
         

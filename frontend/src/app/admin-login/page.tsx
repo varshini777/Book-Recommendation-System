@@ -5,15 +5,24 @@ import { Mail, Lock, ArrowRight, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function Login() {
-  const { user, login } = useAppStore();
+export default function AdminLogin() {
+  const { user, login, logout } = useAppStore();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        router.replace('/admin');
+      } else {
+        setError('Unauthorized: Admin access required.');
+        logout(); // Force them out if they log in but aren't admin
+      }
+    }
+  }, [user, router, logout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,11 +30,10 @@ export default function Login() {
     setLoading(true);
 
     const success = await login(email, password);
-    if (success) {
-      router.replace('/');
-    } else {
-      setError('Invalid email or password. Please try again.');
+    if (!success) {
+      setError('Invalid admin credentials. Please try again.');
     }
+    // Note: If success, the useEffect above will check role and redirect or logout
     setLoading(false);
   };
 
@@ -54,10 +62,10 @@ export default function Login() {
             fontFamily: 'Playfair Display, serif', fontSize: '1.6rem',
             color: 'var(--text-primary)', margin: '0 0 6px 0', fontWeight: 800,
           }}>
-            Welcome Back
+            Admin Login
           </h2>
           <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem', fontWeight: 500 }}>
-            Sign in to access your library and recommendations.
+            Restricted access. Please sign in with your administrator credentials.
           </p>
         </div>
 
@@ -96,8 +104,7 @@ export default function Login() {
         </form>
 
         <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Don&apos;t have an account?{' '}
-          <Link href="/register" style={{ color: 'var(--burgundy)', fontWeight: 700 }}>Create one</Link>
+          Return to <Link href="/login" style={{ color: 'var(--burgundy)', fontWeight: 700 }}>User Login</Link>
         </p>
       </div>
     </div>

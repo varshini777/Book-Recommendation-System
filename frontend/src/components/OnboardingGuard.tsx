@@ -1,77 +1,71 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppStore } from '../lib/zustandStore';
 
+const PROTECTED_PATHS = ['/', '/catalog', '/library', '/profile', '/settings', '/onboarding', '/admin'];
+const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/demo', '/access-denied'];
+
 export default function OnboardingGuard({ children }: { children: React.ReactNode }) {
-  const { user, onboarded, library, loadPreferences, loadLibrary, token } = useAppStore();
+  const { user, onboarded, token, authLoading } = useAppStore();
   const pathname = usePathname();
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      loadPreferences();
-      loadLibrary();
+    if (authLoading) return;
+
+    const isPublic = PUBLIC_PATHS.includes(pathname);
+    const isProtected = PROTECTED_PATHS.includes(pathname) || pathname.startsWith('/catalog/') || pathname.startsWith('/admin/');
+
+    if (isPublic) {
+      if (token && (pathname === '/login' || pathname === '/register')) {
+        router.replace('/');
+      }
+      return;
     }
-  }, [token, loadPreferences, loadLibrary]);
 
-  useEffect(() => {
-    const checkRedirect = async () => {
-      const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
-      const isPublic = publicPaths.includes(pathname);
-
-      if (isPublic) {
-        setChecking(false);
-        return;
+    if (!token) {
+      if (isProtected) {
+        const loginUrl = new URL('/login', window.location.origin);
+        loginUrl.searchParams.set('redirect', pathname);
+        router.replace(loginUrl.toString());
       }
+      return;
+    }
 
-      if (!token) {
-        setChecking(false);
-        return;
-      }
+    if (!user) return;
 
-      // Wait until user details are loaded if token is present
-      if (token && !user) {
-        return;
-      }
+    const isUserOnboarded = onboarded || user.onboarded;
 
-      if (user) {
-        const hasLibraryItems = library && library.length > 0;
-        const isUserOnboarded = onboarded || user.onboarded;
+    if (!isUserOnboarded && pathname !== '/onboarding') {
+      router.replace('/onboarding');
+    } else if (isUserOnboarded && pathname === '/onboarding') {
+      router.replace('/');
+    }
+  }, [authLoading, user, onboarded, pathname, router, token]);
 
-        if (!isUserOnboarded && !hasLibraryItems && pathname !== '/onboarding') {
-          router.replace('/onboarding');
-        } else if (isUserOnboarded && pathname === '/onboarding') {
-          router.replace('/');
-        } else {
-          setChecking(false);
-        }
-      } else {
-        setChecking(false);
-      }
-    };
-
-    checkRedirect();
-  }, [user, onboarded, library, pathname, router, token]);
-
-  const isPublic = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].includes(pathname);
-
-  if (checking && token && !onboarded && !isPublic && pathname !== '/onboarding') {
+  if (authLoading) {
     return (
       <div style={{
-        height: '100vh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         background: 'linear-gradient(135deg, #0b0f19 0%, #111827 100%)',
         color: 'white',
         position: 'fixed',
-        top: 0, left: 0, right: 0, bottom: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 9999
       }}>
         <div style={{
-          width: 48, height: 48, 
+          width: 48,
+          height: 48,
           border: '4px solid rgba(255,255,255,0.1)',
-          borderTopColor: '#6A1B29', 
+          borderTopColor: '#6A1B29',
           borderRadius: '50%',
           animation: 'spin 1s linear infinite'
         }} />

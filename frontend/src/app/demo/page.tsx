@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Cpu, Database, Layers, Settings, BarChart3, Sparkles, BookOpen, Globe, GitBranch } from 'lucide-react';
+import { Cpu, Database, Layers, Settings, BarChart3, Sparkles, BookOpen, GitBranch } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -68,7 +68,6 @@ export default function DemoPage() {
             { icon: GitBranch, title: 'Similarity', desc: 'Cosine Similarity on sparse TF-IDF vectors' },
             { icon: Sparkles, title: 'Ranking', desc: 'Hybrid weighted score: 0.4 sim + 0.2 pref + 0.15 pop + 0.15 rating + 0.1 fresh' },
             { icon: BarChart3, title: 'Features', desc: 'Content-based, collaborative filtering, genre preference, cold-start handling' },
-            { icon: Globe, title: 'Languages', desc: 'Multi-language support with language-based filtering' },
           ].map(item => (
             <div key={item.title} style={{ padding: 20, background: 'var(--surface)', borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(106,27,41,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

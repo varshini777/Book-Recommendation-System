@@ -42,9 +42,7 @@ export default function Home() {
     loadHiddenGems();
   }, [user]);
 
-  useEffect(() => {
-    if (!user) router.replace('/login');
-  }, [user, router]);
+
 
   const loadSection = async (url: string, setter: Function, key: string, auth = false) => {
     try {
@@ -121,7 +119,6 @@ export default function Home() {
     { label: 'Books', value: '9,000+', icon: BookOpen },
     { label: 'Authors', value: '4,200+', icon: Award },
     { label: 'Genres', value: '24', icon: Sparkles },
-    { label: 'Languages', value: 'Multiple', icon: Star },
   ];
 
   return (
@@ -192,8 +189,7 @@ export default function Home() {
           </div>
 
           {/* Stats bar */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          <div className="stats-grid" style={{
             gap: '1px', marginTop: '48px',
             background: 'rgba(255,255,255,0.08)', borderRadius: '16px',
             overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)',

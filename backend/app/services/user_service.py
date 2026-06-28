@@ -43,7 +43,6 @@ class UserService:
         self,
         user_id: int,
         preferred_genres: Optional[List[str]] = None,
-        preferred_languages: Optional[List[str]] = None,
         preferred_authors: Optional[List[str]] = None,
         onboarding_completed: Optional[bool] = None
     ) -> UserPreference:
@@ -58,10 +57,28 @@ class UserService:
         
         if preferred_genres is not None:
             preferences.preferred_genres = preferred_genres
-        if preferred_languages is not None:
-            preferences.preferred_languages = preferred_languages
+            # Sync to UserGenre table
+            from app.db.models import UserGenre, Genre
+            self.db.query(UserGenre).filter(UserGenre.user_id == user_id).delete()
+            for g_name in preferred_genres:
+                genre_obj = self.db.query(Genre).filter(Genre.name.ilike(g_name)).first()
+                if genre_obj:
+                    self.db.add(UserGenre(user_id=user_id, genre_id=genre_obj.id))
+
+
         if preferred_authors is not None:
             preferences.preferred_authors = preferred_authors
+            # Sync to UserAuthor table
+            from app.db.models import UserAuthor, Author
+            self.db.query(UserAuthor).filter(UserAuthor.user_id == user_id).delete()
+            for a_name in preferred_authors:
+                author_obj = self.db.query(Author).filter(Author.name.ilike(a_name)).first()
+                if not author_obj:
+                    author_obj = Author(name=a_name)
+                    self.db.add(author_obj)
+                    self.db.flush()
+                self.db.add(UserAuthor(user_id=user_id, author_id=author_obj.id))
+
         if onboarding_completed is not None:
             preferences.onboarding_completed = onboarding_completed
         

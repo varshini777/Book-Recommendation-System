@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { BarChart3, BookOpen, Users, Star, TrendingUp, Globe, Layers, Calendar } from 'lucide-react';
+import { BarChart3, BookOpen, Users, Star, TrendingUp, Layers, Calendar } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -57,9 +57,7 @@ export default function AnalyticsPage() {
     .slice(0, 12);
   const maxGenreCount = topGenres.length > 0 ? topGenres[0][1] : 1;
 
-  const topLanguages = Object.entries(stats.language_distribution)
-    .sort(([,a],[,b]) => b - a)
-    .slice(0, 6);
+
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 24px', display: 'flex', flexDirection: 'column', gap: 48 }} className="fade-in">
@@ -83,7 +81,6 @@ export default function AnalyticsPage() {
           { icon: Layers, value: stats.total_genres, label: 'Genres', color: '#2E7D32' },
           { icon: Star, value: stats.average_rating.toFixed(1), label: 'Avg Rating', color: '#D4AF37' },
           { icon: Calendar, value: `${stats.year_range.min} - ${stats.year_range.max}`, label: 'Year Range', color: '#6A1B29' },
-          { icon: Globe, value: Object.keys(stats.language_distribution).length, label: 'Languages', color: '#1A237E' },
         ].map(s => (
           <div key={s.label} className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: `${s.color}11`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -95,8 +92,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }} className="analytics-grid">
-        <div className="card" style={{ padding: 32 }}>
+      <div className="card" style={{ padding: 32 }}>
           <h2 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, marginBottom: 24, color: 'var(--text-primary)' }}>
             Top Genres by Book Count
           </h2>
@@ -118,33 +114,6 @@ export default function AnalyticsPage() {
             ))}
           </div>
         </div>
-
-        <div className="card" style={{ padding: 32 }}>
-          <h2 style={{ fontSize: '1.2rem', fontFamily: 'Playfair Display, serif', fontWeight: 800, marginBottom: 24, color: 'var(--text-primary)' }}>
-            Languages
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {topLanguages.map(([lang, count]) => {
-              const maxLang = topLanguages[0][1];
-              return (
-                <div key={lang} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ width: 80, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'right', flexShrink: 0 }}>{lang || 'N/A'}</span>
-                  <div style={{ flex: 1, height: 20, background: 'var(--surface)', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${(count / maxLang) * 100}%`,
-                      background: 'linear-gradient(90deg, #1A237E, #6A1B29)',
-                      borderRadius: 4,
-                      transition: 'width 0.8s ease',
-                    }} />
-                  </div>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--burgundy)', minWidth: 50 }}>{count}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       <div className="card" style={{ padding: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
